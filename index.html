@@ -1,4 +1,21 @@
-import React, { useState, useEffect } from 'react';
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Velizman Kuaför</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-black text-white m-0 p-0 antialiased">
+    <div id="root"></div>
+    <script type="text/babel">
+
+    // === CANVASTAN KOPYALADIĞIN TÜM KODLARI TAM BURAYA, BU SATIRIN ALTINA YAPIŞTIR ===
+      import React, { useState, useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, collection, onSnapshot, doc, setDoc, addDoc } from 'firebase/firestore';
@@ -717,3 +734,10 @@ function AdminDashboard({ prices, appointments, setView }) {
     </div>
   );
 }
+
+    // === CANVAS KODLARININ BİTTİĞİ YER (EN ALT) ===
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<VelizmanApp />);
+    </script>
+</body>
+</html>
