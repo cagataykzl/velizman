@@ -1,0 +1,719 @@
+import React, { useState, useEffect } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, collection, onSnapshot, doc, setDoc, addDoc } from 'firebase/firestore';
+import { Scissors, Calendar, Clock, User, Phone, CheckCircle, Lock, Edit, ChevronLeft, CalendarCheck2, MessageCircle, Wallet } from 'lucide-react';
+
+// --- Firebase Configuration ---
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'velizman-app-id';
+
+// --- Constants & Helper Functions ---
+const SERVICES = [
+  { id: 'sac', label: 'Saç Tıraşı' },
+  { id: 'sakal', label: 'Sakal Tıraşı' },
+  { id: 'cilt', label: 'Cilt Bakımı' },
+  { id: 'yikama', label: 'Yıkama' },
+  { id: 'sac_sakal_yikama', label: 'Saç + Sakal + Yıkama' },
+  { id: 'sac_yikama', label: 'Saç + Yıkama' }
+];
+
+const DEFAULT_PRICES = {
+  sac: 200,
+  sakal: 100,
+  cilt: 150,
+  yikama: 50,
+  sac_sakal_yikama: 300,
+  sac_yikama: 220,
+  lastUpdated: new Date().toISOString()
+};
+
+const generateTimeSlots = () => {
+  const slots = [];
+  for (let h = 9; h <= 20; h++) {
+    slots.push(`${h.toString().padStart(2, '0')}:00`);
+    if (h !== 20) {
+      slots.push(`${h.toString().padStart(2, '0')}:30`);
+    } else {
+      slots.push(`20:30`); // Son randevu bitişi 20:30 olacak şekilde 20:00 son randevu saati olabilir, ama isteğe göre 20:30'u da seçenek yapalım.
+    }
+  }
+  return slots.filter(s => s !== '20:30'); // Randevu BAŞLANGIÇ saatleri. 20:00'da giren 20:30'da çıkar.
+};
+
+const TIME_SLOTS = generateTimeSlots();
+
+const formatDateTR = (dateString) => {
+  const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+  return new Date(dateString).toLocaleDateString('tr-TR', options);
+};
+
+const getMonday = (dStr) => {
+  const d = new Date(dStr);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  return new Date(d.setDate(diff)).toISOString().split('T')[0];
+};
+
+const isSameMonth = (d1, d2) => d1.substring(0, 7) === d2.substring(0, 7);
+const isSameWeek = (d1, d2) => getMonday(d1) === getMonday(d2);
+
+const getNext7Days = () => {
+  const dates = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+    dates.push(d.toISOString().split('T')[0]);
+  }
+  return dates;
+};
+
+// --- Main App Component ---
+export default function VelizmanApp() {
+  const [user, setUser] = useState(null);
+  const [view, setView] = useState('customer'); // 'customer', 'admin_login', 'admin_dashboard'
+  
+  // Data States
+  const [prices, setPrices] = useState(DEFAULT_PRICES);
+  const [appointments, setAppointments] = useState([]);
+  
+  // App initialization
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      } catch (error) {
+        console.error("Auth error:", error);
+      }
+    };
+    initAuth();
+    
+    const unsubscribe = onAuthStateChanged(auth, setUser);
+    return () => unsubscribe();
+  }, []);
+
+  // Fetch Data
+  useEffect(() => {
+    if (!user) return;
+
+    const pricesRef = collection(db, 'artifacts', appId, 'public', 'data', 'prices');
+    const unsubscribePrices = onSnapshot(pricesRef, (snapshot) => {
+      let currentPrices = null;
+      snapshot.forEach(doc => {
+        if (doc.id === 'current') {
+          currentPrices = doc.data();
+        }
+      });
+      if (currentPrices) setPrices(currentPrices);
+    }, (error) => console.error("Fiyat okuma hatası:", error));
+
+    const appointmentsRef = collection(db, 'artifacts', appId, 'public', 'data', 'appointments');
+    const unsubscribeAppointments = onSnapshot(appointmentsRef, (snapshot) => {
+      const apps = [];
+      snapshot.forEach(doc => {
+        apps.push({ id: doc.id, ...doc.data() });
+      });
+      setAppointments(apps);
+    }, (error) => console.error("Randevu okuma hatası:", error));
+
+    return () => {
+      unsubscribePrices();
+      unsubscribeAppointments();
+    };
+  }, [user]);
+
+  return (
+    <div className="min-h-screen bg-neutral-900 text-neutral-100 font-sans selection:bg-amber-500 selection:text-neutral-900">
+      <div className="max-w-md mx-auto bg-neutral-950 min-h-screen shadow-2xl relative flex flex-col">
+        
+        {/* Header */}
+        <div className="bg-neutral-900 p-6 border-b border-amber-500/20 text-center relative z-10 shadow-lg">
+          <div className="w-16 h-16 bg-neutral-800 rounded-full mx-auto flex items-center justify-center mb-3 border border-amber-500/30">
+            <Scissors className="w-8 h-8 text-amber-500" />
+          </div>
+          <h1 className="text-2xl font-bold tracking-wider text-amber-500">VELİZMAN</h1>
+          <p className="text-neutral-400 text-sm tracking-widest mt-1">Erkek Kuaförü</p>
+          <p className="text-neutral-500 text-xs mt-2 italic">Berber Coşkun Çulan</p>
+        </div>
+
+        {/* Content Area */}
+        <div className="flex-1 overflow-y-auto pb-20">
+          {view === 'customer' && (
+             <CustomerView 
+                prices={prices} 
+                appointments={appointments} 
+                user={user} 
+             />
+          )}
+          {view === 'admin_login' && (
+             <AdminLogin setView={setView} />
+          )}
+          {view === 'admin_dashboard' && (
+             <AdminDashboard 
+                prices={prices} 
+                appointments={appointments} 
+                setView={setView} 
+             />
+          )}
+        </div>
+
+        {/* Footer / Admin Toggle */}
+        {view === 'customer' && (
+          <div className="p-4 text-center border-t border-neutral-800 bg-neutral-950">
+             <button 
+                onClick={() => setView('admin_login')}
+                className="inline-flex items-center gap-2 text-xs text-neutral-600 hover:text-amber-500 transition-colors"
+             >
+                <Lock className="w-3 h-3" />
+                Yönetici Girişi
+             </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// --- Customer View Component ---
+function CustomerView({ prices, appointments, user }) {
+  const [selectedDate, setSelectedDate] = useState(getNext7Days()[0]);
+  const [selectedTime, setSelectedTime] = useState('');
+  const [selectedServices, setSelectedServices] = useState([]);
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [bookingStatus, setBookingStatus] = useState('idle'); // idle, loading, success, error
+  const [errorMessage, setErrorMessage] = useState('');
+
+  // Filter appointments for selected date
+  const bookedSlots = appointments
+    .filter(app => app.date === selectedDate)
+    .map(app => app.time);
+
+  const handleServiceToggle = (serviceId) => {
+    if (selectedServices.includes(serviceId)) {
+      setSelectedServices(selectedServices.filter(id => id !== serviceId));
+    } else {
+      setSelectedServices([...selectedServices, serviceId]);
+    }
+  };
+
+  const handleBooking = async () => {
+    if (!selectedTime || selectedServices.length === 0 || !name.trim() || !phone.trim()) {
+      setErrorMessage("Lütfen saat, hizmet, ad soyad ve telefon bilgilerinizi eksiksiz doldurun.");
+      return;
+    }
+
+    const dayAppsCount = appointments.filter(app => app.date === selectedDate).length;
+    if (dayAppsCount >= 10) {
+      setErrorMessage("Bu gün için maksimum randevu kapasitesine ulaşılmıştır. Lütfen başka bir gün seçin.");
+      return;
+    }
+    
+    setBookingStatus('loading');
+    setErrorMessage('');
+
+    const totalPrice = selectedServices.reduce((sum, serviceId) => sum + (prices[serviceId] || 0), 0);
+
+    try {
+      const appointmentsRef = collection(db, 'artifacts', appId, 'public', 'data', 'appointments');
+      await addDoc(appointmentsRef, {
+        date: selectedDate,
+        time: selectedTime,
+        services: selectedServices,
+        totalPrice: totalPrice,
+        name: name.trim(),
+        phone: phone.trim(),
+        createdAt: new Date().toISOString()
+      });
+      setBookingStatus('success');
+    } catch (error) {
+      console.error("Randevu kaydedilemedi:", error);
+      setErrorMessage("Bir hata oluştu, lütfen tekrar deneyin.");
+      setBookingStatus('idle');
+    }
+  };
+
+  const openWhatsApp = () => {
+    const serviceNames = selectedServices.map(id => SERVICES.find(s => s.id === id)?.label).join(', ');
+    const message = `Merhaba Coşkun Bey, \n\n*${formatDateTR(selectedDate)}* tarihi, saat *${selectedTime}* için *${serviceNames}* randevusu oluşturdum.\n\nİsmim: ${name}\nİyi çalışmalar.`;
+    // Not: Buradaki telefon numarası örnek veya genel bir link olabilir.
+    // Berber kendi numarasını buraya entegre etmek isterse diye "wa.me" yapısı kullanılıyor.
+    const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+  };
+
+  const resetForm = () => {
+    setSelectedTime('');
+    setSelectedServices([]);
+    setName('');
+    setPhone('');
+    setBookingStatus('idle');
+  };
+
+  if (bookingStatus === 'success') {
+    return (
+      <div className="p-8 text-center flex flex-col items-center justify-center min-h-[60vh] space-y-6 animate-in fade-in zoom-in duration-500">
+        <div className="w-20 h-20 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center">
+          <CheckCircle className="w-10 h-10" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold text-amber-500 mb-2">Randevunuz Alındı!</h2>
+          <p className="text-neutral-300">
+            {formatDateTR(selectedDate)} saat {selectedTime} için randevunuz başarıyla kaydedilmiştir.
+          </p>
+        </div>
+        
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 w-full">
+          <p className="text-amber-500 text-sm font-medium">
+            Önemli Hatırlatma: Randevunuzun onaylanması için aşağıdaki butonu kullanarak bize WhatsApp'tan mesaj göndermeyi lütfen unutmayın.
+          </p>
+        </div>
+        
+        <div className="w-full space-y-3 pt-4 border-t border-neutral-800">
+          <button 
+            onClick={openWhatsApp}
+            className="w-full bg-green-600 hover:bg-green-500 text-white font-medium py-3 rounded-xl flex items-center justify-center gap-2 transition-colors"
+          >
+            <MessageCircle className="w-5 h-5" />
+            WhatsApp'tan Bildir
+          </button>
+          
+          <button 
+            onClick={resetForm}
+            className="w-full bg-neutral-800 hover:bg-neutral-700 text-white font-medium py-3 rounded-xl transition-colors"
+          >
+            Yeni Randevu Al
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4 space-y-8 pb-12">
+      
+      {/* Services & Prices */}
+      <section className="bg-neutral-900 rounded-2xl p-5 border border-neutral-800">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-amber-500 flex items-center gap-2">
+            <Scissors className="w-5 h-5" /> Hizmetlerimiz
+          </h2>
+          {prices.lastUpdated && (
+            <span className="text-[10px] text-neutral-500 bg-neutral-950 px-2 py-1 rounded-full border border-neutral-800">
+              Güncelleme: {new Date(prices.lastUpdated).toLocaleDateString('tr-TR')}
+            </span>
+          )}
+        </div>
+        <div className="grid grid-cols-1 gap-2">
+          {SERVICES.map(service => (
+            <div key={service.id} className="flex justify-between items-center py-2 border-b border-neutral-800/50 last:border-0">
+              <span className="text-neutral-300">{service.label}</span>
+              <span className="font-semibold text-amber-400">{prices[service.id] || '-'} ₺</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Booking Section */}
+      <section className="space-y-5">
+        <h2 className="text-xl font-bold text-white flex items-center gap-2 px-1">
+          <CalendarCheck2 className="w-6 h-6 text-amber-500" />
+          Randevu Al
+        </h2>
+
+        {/* Date Selector */}
+        <div className="space-y-2">
+          <label className="text-sm text-neutral-400 px-1">Tarih Seçin</label>
+          <div className="flex overflow-x-auto gap-2 pb-2 hide-scrollbar">
+            {getNext7Days().map(dateStr => {
+              const d = new Date(dateStr);
+              const dayName = d.toLocaleDateString('tr-TR', { weekday: 'short' });
+              const dayNum = d.getDate();
+              const isSelected = selectedDate === dateStr;
+              
+              const dayAppsCount = appointments.filter(app => app.date === dateStr).length;
+              const percentage = Math.min(dayAppsCount * 10, 100);
+              const isFull = dayAppsCount >= 10;
+              
+              return (
+                <button
+                  key={dateStr}
+                  disabled={isFull}
+                  onClick={() => { setSelectedDate(dateStr); setSelectedTime(''); }}
+                  className={`flex-shrink-0 min-w-[70px] py-3 rounded-xl flex flex-col items-center justify-center transition-all ${
+                    isSelected 
+                      ? 'bg-amber-500 text-neutral-950 font-bold shadow-lg shadow-amber-500/20' 
+                      : isFull
+                        ? 'bg-red-950/20 text-neutral-600 border border-red-900/30 cursor-not-allowed opacity-50'
+                        : 'bg-neutral-900 text-neutral-400 border border-neutral-800 hover:border-amber-500/50'
+                  }`}
+                >
+                  <span className="text-xs uppercase">{dayName}</span>
+                  <span className="text-xl">{dayNum}</span>
+                  <span className={`text-[10px] mt-1 font-bold ${isFull ? 'text-red-500' : isSelected ? 'text-neutral-900' : 'text-amber-500/70'}`}>
+                    %{percentage} {isFull && '(Dolu)'}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Time Selector */}
+        <div className="space-y-2">
+          <label className="text-sm text-neutral-400 px-1">Saat Seçin</label>
+          <div className="grid grid-cols-4 gap-2">
+            {TIME_SLOTS.map(time => {
+              const isBooked = bookedSlots.includes(time);
+              const isSelected = selectedTime === time;
+              return (
+                <button
+                  key={time}
+                  disabled={isBooked}
+                  onClick={() => setSelectedTime(time)}
+                  className={`py-2 text-sm rounded-lg transition-all ${
+                    isBooked 
+                      ? 'bg-red-950/40 text-red-500/50 border border-red-900/30 cursor-not-allowed line-through'
+                      : isSelected
+                        ? 'bg-amber-500 text-neutral-950 font-bold'
+                        : 'bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-amber-500/50'
+                  }`}
+                >
+                  {time}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Services Multi-Select */}
+        <div className="space-y-2">
+          <label className="text-sm text-neutral-400 px-1">Yaptırmak İstediğiniz İşlemler</label>
+          <div className="grid grid-cols-2 gap-2">
+            {SERVICES.map(service => {
+              const isSelected = selectedServices.includes(service.id);
+              return (
+                <button
+                  key={service.id}
+                  onClick={() => handleServiceToggle(service.id)}
+                  className={`py-2 px-3 text-sm rounded-lg border text-left transition-all flex items-center justify-between ${
+                    isSelected 
+                      ? 'bg-neutral-800 border-amber-500 text-amber-400' 
+                      : 'bg-neutral-900 border-neutral-800 text-neutral-400'
+                  }`}
+                >
+                  <span className="truncate">{service.label}</span>
+                  {isSelected && <CheckCircle className="w-4 h-4 text-amber-500" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* User Info Form */}
+        <div className="space-y-3 pt-2">
+          <div className="relative">
+            <User className="w-5 h-5 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input 
+              type="text" 
+              placeholder="Adınız Soyadınız" 
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-amber-500 transition-colors placeholder:text-neutral-600"
+            />
+          </div>
+          <div className="relative">
+            <Phone className="w-5 h-5 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input 
+              type="tel" 
+              placeholder="Telefon Numaranız" 
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-amber-500 transition-colors placeholder:text-neutral-600"
+            />
+          </div>
+        </div>
+
+        {errorMessage && (
+          <div className="p-3 bg-red-950/50 border border-red-900/50 rounded-xl text-red-400 text-sm text-center">
+            {errorMessage}
+          </div>
+        )}
+
+        <button 
+          onClick={handleBooking}
+          disabled={bookingStatus === 'loading'}
+          className="w-full bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold text-lg py-4 rounded-xl shadow-lg shadow-amber-500/20 transition-all disabled:opacity-70 flex items-center justify-center gap-2 mt-4"
+        >
+          {bookingStatus === 'loading' ? (
+            <span className="animate-pulse">İşleniyor...</span>
+          ) : (
+            <>Randevuyu Tamamla <CheckCircle className="w-5 h-5" /></>
+          )}
+        </button>
+
+      </section>
+    </div>
+  );
+}
+
+
+// --- Admin Login Component ---
+function AdminLogin({ setView }) {
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState(false);
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (password === '01051992') {
+      setView('admin_dashboard');
+    } else {
+      setError(true);
+      setPassword('');
+    }
+  };
+
+  return (
+    <div className="p-8 flex flex-col items-center justify-center min-h-[70vh] animate-in fade-in">
+      <div className="w-16 h-16 bg-neutral-900 rounded-full flex items-center justify-center mb-6 border border-neutral-800">
+        <Lock className="w-8 h-8 text-neutral-400" />
+      </div>
+      <h2 className="text-xl font-bold mb-2">Yönetici Paneli</h2>
+      <p className="text-neutral-500 text-sm mb-8 text-center">Randevuları ve fiyatları yönetmek için şifrenizi girin.</p>
+      
+      <form onSubmit={handleLogin} className="w-full space-y-4">
+        <input
+          type="password"
+          placeholder="Şifre"
+          value={password}
+          onChange={(e) => { setPassword(e.target.value); setError(false); }}
+          className={`w-full bg-neutral-900 border ${error ? 'border-red-500' : 'border-neutral-800'} rounded-xl py-3 px-4 text-center text-white focus:outline-none focus:border-amber-500 transition-colors tracking-widest`}
+        />
+        {error && <p className="text-red-400 text-xs text-center">Hatalı şifre, lütfen tekrar deneyin.</p>}
+        
+        <button 
+          type="submit"
+          className="w-full bg-neutral-800 hover:bg-neutral-700 text-white font-medium py-3 rounded-xl transition-colors"
+        >
+          Giriş Yap
+        </button>
+        
+        <button 
+          type="button"
+          onClick={() => setView('customer')}
+          className="w-full text-neutral-500 text-sm py-2 hover:text-white transition-colors"
+        >
+          Müşteri Ekranına Dön
+        </button>
+      </form>
+    </div>
+  );
+}
+
+
+// --- Admin Dashboard Component ---
+function AdminDashboard({ prices, appointments, setView }) {
+  const [activeTab, setActiveTab] = useState('randevular'); // 'randevular', 'fiyatlar'
+  
+  // Appointments state
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+
+  // Prices form state
+  const [editPrices, setEditPrices] = useState(prices);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  const handlePriceChange = (id, value) => {
+    setEditPrices(prev => ({ ...prev, [id]: Number(value) || 0 }));
+  };
+
+  const handleSavePrices = async () => {
+    setIsSaving(true);
+    try {
+      const pricesRef = doc(db, 'artifacts', appId, 'public', 'data', 'prices', 'current');
+      await setDoc(pricesRef, {
+        ...editPrices,
+        lastUpdated: new Date().toISOString()
+      });
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (error) {
+      console.error("Fiyat güncellenirken hata:", error);
+    }
+    setIsSaving(false);
+  };
+
+  // Filter and sort appointments
+  const filteredApps = appointments
+    .filter(app => app.date === selectedDate)
+    .sort((a, b) => a.time.localeCompare(b.time));
+
+  // Calculate Earnings
+  let dailyTotal = 0;
+  let weeklyTotal = 0;
+  let monthlyTotal = 0;
+
+  appointments.forEach(app => {
+    const appPrice = app.totalPrice || app.services.reduce((sum, sId) => sum + (prices[sId] || 0), 0);
+    if (app.date === selectedDate) {
+      dailyTotal += appPrice;
+    }
+    if (isSameWeek(app.date, selectedDate)) {
+      weeklyTotal += appPrice;
+    }
+    if (isSameMonth(app.date, selectedDate)) {
+      monthlyTotal += appPrice;
+    }
+  });
+
+  return (
+    <div className="flex flex-col h-full animate-in fade-in">
+      {/* Admin Header */}
+      <div className="bg-neutral-900 border-b border-neutral-800 p-4 flex items-center justify-between sticky top-0 z-20">
+        <div className="flex items-center gap-3">
+          <button onClick={() => setView('customer')} className="w-8 h-8 flex items-center justify-center bg-neutral-800 rounded-full text-neutral-400 hover:text-white">
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <span className="font-bold text-amber-500">Yönetim</span>
+        </div>
+        
+        <div className="flex bg-neutral-950 p-1 rounded-lg border border-neutral-800">
+          <button 
+            onClick={() => setActiveTab('randevular')}
+            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${activeTab === 'randevular' ? 'bg-neutral-800 text-white' : 'text-neutral-500'}`}
+          >
+            Randevular
+          </button>
+          <button 
+            onClick={() => setActiveTab('fiyatlar')}
+            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${activeTab === 'fiyatlar' ? 'bg-neutral-800 text-white' : 'text-neutral-500'}`}
+          >
+            Fiyatlar
+          </button>
+        </div>
+      </div>
+
+      <div className="p-4">
+        {/* Tab: Randevular */}
+        {activeTab === 'randevular' && (
+          <div className="space-y-4">
+            <div className="bg-neutral-900 p-3 rounded-xl border border-neutral-800 flex items-center justify-between">
+              <label className="text-sm text-neutral-400 font-medium">Tarih:</label>
+              <input 
+                type="date" 
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="bg-neutral-950 border border-neutral-800 text-white px-3 py-1.5 rounded-lg focus:outline-none focus:border-amber-500"
+              />
+            </div>
+
+            {/* Earnings Summary */}
+            <div className="grid grid-cols-3 gap-2">
+              <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-3 text-center flex flex-col justify-center">
+                <p className="text-[10px] text-neutral-500 uppercase tracking-wider mb-1">Günlük</p>
+                <p className="text-sm font-bold text-amber-500">{dailyTotal} ₺</p>
+              </div>
+              <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-3 text-center flex flex-col justify-center">
+                <p className="text-[10px] text-neutral-500 uppercase tracking-wider mb-1">Haftalık</p>
+                <p className="text-sm font-bold text-amber-500">{weeklyTotal} ₺</p>
+              </div>
+              <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-3 text-center flex flex-col justify-center">
+                <p className="text-[10px] text-neutral-500 uppercase tracking-wider mb-1">Aylık</p>
+                <p className="text-sm font-bold text-amber-500">{monthlyTotal} ₺</p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {filteredApps.length === 0 ? (
+                <div className="text-center py-10 bg-neutral-900/50 rounded-xl border border-neutral-800/50 border-dashed">
+                  <Calendar className="w-8 h-8 text-neutral-600 mx-auto mb-2" />
+                  <p className="text-neutral-500 text-sm">Bu tarihe ait randevu bulunmuyor.</p>
+                </div>
+              ) : (
+                filteredApps.map(app => (
+                  <div key={app.id} className="bg-neutral-900 border-l-4 border-amber-500 rounded-r-xl p-4 shadow-sm relative overflow-hidden">
+                    <div className="absolute top-0 right-0 bg-neutral-800 text-amber-500 text-xs font-bold px-3 py-1 rounded-bl-lg">
+                      {app.time}
+                    </div>
+                    <h3 className="font-bold text-lg text-white mb-1 pr-12">{app.name}</h3>
+                    <div className="flex items-center gap-2 text-neutral-400 text-sm mb-3">
+                      <Phone className="w-4 h-4" />
+                      <a href={`tel:${app.phone}`} className="hover:text-amber-500 underline decoration-neutral-700 underline-offset-4">
+                        {app.phone}
+                      </a>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {app.services.map(srvId => {
+                        const srvLabel = SERVICES.find(s => s.id === srvId)?.label || srvId;
+                        return (
+                          <span key={srvId} className="bg-neutral-950 text-neutral-300 border border-neutral-800 text-[10px] px-2 py-1 rounded-md">
+                            {srvLabel}
+                          </span>
+                        );
+                      })}
+                    </div>
+                    
+                    <div className="mt-3 pt-3 border-t border-neutral-800 flex justify-between items-center">
+                       <span className="text-xs text-neutral-500 flex items-center gap-1"><Wallet className="w-3 h-3" /> Tahmini Kazanç</span>
+                       <span className="text-sm font-bold text-amber-500">
+                         {app.totalPrice || app.services.reduce((sum, sId) => sum + (prices[sId] || 0), 0)} ₺
+                       </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Tab: Fiyatlar */}
+        {activeTab === 'fiyatlar' && (
+          <div className="space-y-4">
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 mb-4">
+              <p className="text-amber-500/80 text-xs flex items-start gap-2">
+                <Edit className="w-4 h-4 shrink-0" />
+                Buradan yaptığınız değişiklikler anında müşteri ekranında güncellenir ve tarih not düşülür.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {SERVICES.map(service => (
+                <div key={service.id} className="flex items-center justify-between bg-neutral-900 p-3 rounded-xl border border-neutral-800">
+                  <span className="text-neutral-300 text-sm font-medium">{service.label}</span>
+                  <div className="flex items-center gap-2">
+                    <input 
+                      type="number" 
+                      value={editPrices[service.id] || ''}
+                      onChange={(e) => handlePriceChange(service.id, e.target.value)}
+                      className="w-20 bg-neutral-950 border border-neutral-700 rounded-lg py-1.5 px-2 text-right text-white focus:outline-none focus:border-amber-500 font-mono"
+                    />
+                    <span className="text-neutral-500 font-medium">₺</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button 
+              onClick={handleSavePrices}
+              disabled={isSaving}
+              className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all mt-6 ${
+                saveSuccess 
+                  ? 'bg-green-600 text-white' 
+                  : 'bg-amber-500 hover:bg-amber-400 text-neutral-950'
+              }`}
+            >
+              {isSaving ? 'Kaydediliyor...' : saveSuccess ? 'Başarıyla Kaydedildi!' : 'Fiyatları Güncelle'}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
