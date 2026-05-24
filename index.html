@@ -1,494 +1,801 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Velizman Kuaför</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-</head>
-<body class="bg-black text-white m-0 p-0 antialiased">
-    <div id="root"></div>
-    <script type="text/babel">
-        // İkonların hatasız parlamasını sağlayan hafif yönlendiriciler
-        const Scissors = () => <i className="fas fa-scissors text-amber-500"></i>;
-        const Calendar = () => <i className="far fa-calendar-alt"></i>;
-        const Clock = () => <i className="far fa-clock"></i>;
-        const User = () => <i className="far fa-user"></i>;
-        const Phone = () => <i className="fas fa-phone-alt"></i>;
-        const CheckCircle = () => <i className="far fa-check-circle"></i>;
-        const Lock = () => <i className="fas fa-lock"></i>;
-        const Edit = () => <i className="far fa-edit"></i>;
-        const ChevronLeft = () => <i className="fas fa-chevron-left"></i>;
-        const CalendarCheck2 = () => <i className="fas fa-calendar-check"></i>;
-        const MessageCircle = () => <i className="fab fa-whatsapp"></i>;
-        const Wallet = () => <i className="fas fa-wallet text-amber-500"></i>;
-        const TrendingUp = () => <i className="fas fa-chart-line text-amber-500"></i>;
-        const DollarSign = () => <i className="fas fa-lira-sign"></i>;
+import React, { useState, useEffect } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, collection, onSnapshot, doc, setDoc, addDoc, deleteDoc } from 'firebase/firestore';
+import { Scissors, Calendar, Clock, User, Phone, CheckCircle, Lock, Edit, ChevronLeft, CalendarCheck2, MessageCircle, Wallet, Trash2, X } from 'lucide-react';
 
-        // === ANA UYGULAMA MEKANİZMASI ===
-        function VelizmanApp() {
-            const [view, setView] = React.useState('customer');
-            const [selectedDate, setSelectedDate] = React.useState('');
-            const [selectedTime, setSelectedTime] = React.useState('');
-            const [selectedServices, setSelectedServices] = React.useState([]);
-            const [name, setName] = React.useState('');
-            const [phone, setPhone] = React.useState('');
-            const [lastBookedAppointment, setLastBookedAppointment] = React.useState(null);
-            const [isSaving, setIsSaving] = React.useState(false);
-            const [saveSuccess, setSaveSuccess] = React.useState(false);
-            
-            const [appointments, setAppointments] = React.useState([
-                { id: '1', date: '2026-05-23', time: '13:00', services: ['sac_yikama'], name: 'ali veli', phone: '123' }
-            ]);
-            
-            const [prices, setPrices] = React.useState({
-                'sac': 600, 'sakal': 300, 'cilt': 400, 'yikama': 50, 'sac_sakal_yikama': 850, 'sac_yikama': 650
-            });
-            const [editPrices, setEditPrices] = React.useState({
-                'sac': 600, 'sakal': 300, 'cilt': 400, 'yikama': 50, 'sac_sakal_yikama': 850, 'sac_yikama': 650
-            });
-            
-            const [adminLogin, setAdminLogin] = React.useState({ username: '', password: '' });
-            const [isAdminLoggedIn, setIsAdminLoggedIn] = React.useState(false);
-            const [errorMessage, setErrorMessage] = React.useState('');
+// --- Firebase Configuration ---
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'velizman-app-id';
 
-            const SERVICES = [
-                { id: 'sac', label: 'Saç Tıraşı', price: prices.sac },
-                { id: 'sakal', label: 'Sakal Tıraşı', price: prices.sakal },
-                { id: 'cilt', label: 'Cilt Bakımı', price: prices.cilt },
-                { id: 'yikama', label: 'Yıkama', price: prices.yikama },
-                { id: 'sac_sakal_yikama', label: 'Saç + Sakal + Yıkama', price: prices.sac_sakal_yikama },
-                { id: 'sac_yikama', label: 'Saç + Yıkama', price: prices.sac_yikama }
-            ];
+// --- Constants & Helper Functions ---
+const SERVICES = [
+  { id: 'sac', label: 'Saç Tıraşı' },
+  { id: 'sakal', label: 'Sakal Tıraşı' },
+  { id: 'cilt', label: 'Cilt Bakımı' },
+  { id: 'yikama', label: 'Yıkama' },
+  { id: 'sac_sakal_yikama', label: 'Saç + Sakal + Yıkama' },
+  { id: 'sac_yikama', label: 'Saç + Yıkama' }
+];
 
-            const getNext7Days = () => {
-                const days = [];
-                const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
-                for (let i = 0; i < 7; i++) {
-                    const d = new Date();
-                    d.setDate(d.getDate() + i);
-                    days.push({
-                        dateStr: d.toISOString().split('T')[0],
-                        label: d.toLocaleDateString('tr-TR', options)
-                    });
-                }
-                return days;
-            };
+const DEFAULT_PRICES = {
+  sac: 200,
+  sakal: 100,
+  cilt: 150,
+  yikama: 50,
+  sac_sakal_yikama: 300,
+  sac_yikama: 220,
+  lastUpdated: new Date().toISOString()
+};
 
-            const generateTimeSlots = () => {
-                const slots = [];
-                for (let h = 9; h <= 20; h++) {
-                    slots.push(`${String(h).padStart(2, '0')}:00`);
-                    if (h !== 20) slots.push(`${String(h).padStart(2, '0')}:30`);
-                }
-                return slots;
-            };
+const generateTimeSlots = () => {
+  const slots = [];
+  for (let h = 9; h <= 20; h++) {
+    slots.push(`${h.toString().padStart(2, '0')}:00`);
+    if (h !== 20) {
+      slots.push(`${h.toString().padStart(2, '0')}:30`);
+    } else {
+      slots.push(`20:30`);
+    }
+  }
+  return slots.filter(s => s !== '20:30'); // Randevu BAŞLANGIÇ saatleri.
+};
 
-            const handleServiceToggle = (id) => {
-                if (id === 'sac_sakal_yikama' || id === 'sac_yikama') {
-                    setSelectedServices([id]);
-                } else {
-                    const filtered = selectedServices.filter(s => s !== 'sac_sakal_yikama' && s !== 'sac_yikama');
-                    if (filtered.includes(id)) {
-                        setSelectedServices(filtered.filter(s => s !== id));
-                    } else {
-                        setSelectedServices([...filtered, id]);
-                    }
-                }
-            };
+const TIME_SLOTS = generateTimeSlots();
 
-            const handlePriceChange = (id, value) => {
-                setEditPrices({ ...editPrices, [id]: Number(value) });
-            };
+const getNextSlot = (timeStr) => {
+  if (!timeStr) return '';
+  let [h, m] = timeStr.split(':').map(Number);
+  m += 30;
+  if (m >= 60) {
+    h += 1;
+    m -= 60;
+  }
+  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+};
 
-            const handleSavePrices = () => {
-                setIsSaving(true);
-                setTimeout(() => {
-                    setPrices({ ...editPrices });
-                    setIsSaving(false);
-                    setSaveSuccess(true);
-                    setTimeout(() => setSaveSuccess(false), 2500);
-                }, 800);
-            };
+const getRequiredSlots = (services) => {
+  if (!services || services.length === 0) return 1;
+  if (services.includes('sac_sakal_yikama')) return 2; // 1 saat
+  
+  // Eğer 2'den fazla ana hizmet seçildiyse (Örn: Saç ve Sakal ayrı ayrı seçildiyse)
+  let count = 0;
+  if (services.includes('sac') || services.includes('sac_yikama')) count++;
+  if (services.includes('sakal')) count++;
+  if (services.includes('cilt')) count++;
+  
+  return count >= 2 ? 2 : 1; // Maksimum 2 slot (1 saat) blokluyoruz
+};
 
-            const handleBook = (e) => {
-                e.preventDefault();
-                if (!selectedDate || !selectedTime || selectedServices.length === 0 || !name || !phone) {
-                    setErrorMessage('Lütfen tüm alanları eksiksiz doldurunuz.');
-                    return;
-                }
-                const dayAppsCount = appointments.filter(app => app.date === selectedDate).length;
-                if (dayAppsCount >= 10) {
-                    setErrorMessage('Seçtiğiniz gün için maksimum randevu kapasitesine ulaşılmıştır. Lütfen başka bir gün seçin.');
-                    return;
-                }
-                const newApp = {
-                    id: Date.now().toString(),
-                    date: selectedDate,
-                    time: selectedTime,
-                    services: selectedServices,
-                    name,
-                    phone
-                };
-                setAppointments([...appointments, newApp]);
-                setLastBookedAppointment(newApp);
-                setView('booking_success');
-                
-                setSelectedDate('');
-                setSelectedTime('');
-                setSelectedServices([]);
-                setName('');
-                setPhone('');
-                setErrorMessage('');
-            };
+const formatDateTR = (dateString) => {
+  const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+  return new Date(dateString).toLocaleDateString('tr-TR', options);
+};
 
-            const totalCapacityPercentage = (dateStr) => {
-                const count = appointments.filter(app => app.date === dateStr).length;
-                return Math.min(count * 10, 100);
-            };
+const getMonday = (dStr) => {
+  const d = new Date(dStr);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  return new Date(d.setDate(diff)).toISOString().split('T')[0];
+};
 
-            const handleAdminLoginSubmit = (e) => {
-                e.preventDefault();
-                if (adminLogin.username === 'admin' && adminLogin.password === 'velizman123') {
-                    setIsAdminLoggedIn(true);
-                    setView('admin_dashboard');
-                    setErrorMessage('');
-                } else {
-                    setErrorMessage('Hatalı kullanıcı adı veya şifre.');
-                }
-            };
+const isSameMonth = (d1, d2) => d1.substring(0, 7) === d2.substring(0, 7);
+const isSameWeek = (d1, d2) => getMonday(d1) === getMonday(d2);
 
-            const getAppointmentCost = (app) => {
-                return app.services.reduce((total, sId) => total + (prices[sId] || 0), 0);
-            };
+const getNext7Days = () => {
+  const dates = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+    dates.push(d.toISOString().split('T')[0]);
+  }
+  return dates;
+};
 
-            const getEarningsStats = () => {
-                const now = new Date();
-                let weeklyTotal = 0;
-                let monthlyTotal = 0;
-
-                const startOfWeek = new Date(now);
-                const day = startOfWeek.getDay();
-                const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
-                startOfWeek.setDate(diff);
-                startOfWeek.setHours(0,0,0,0);
-
-                const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-                appointments.forEach(app => {
-                    const appDate = new Date(app.date);
-                    const cost = getAppointmentCost(app);
-                    
-                    if (appDate >= startOfWeek) weeklyTotal += cost;
-                    if (appDate >= startOfMonth) monthlyTotal += cost;
-                });
-
-                return { weekly: weeklyTotal, monthly: monthlyTotal };
-            };
-
-            const stats = getEarningsStats();
-
-            const sendWhatsAppNotification = () => {
-                if (!lastBookedAppointment) return;
-                const chosenServicesLabels = lastBookedAppointment.services
-                    .map(sId => SERVICES.find(s => s.id === sId)?.label || sId)
-                    .join(', ');
-                
-                const message = `Merhaba, Velizman Kuaför'den randevunuz oluşturuldu!\n\n👤 İsim: ${lastBookedAppointment.name}\n📅 Tarih: ${lastBookedAppointment.date}\n⏰ Saat: ${lastBookedAppointment.time}\n✂️ Hizmet: ${chosenServicesLabels}\n\nTeşekkür ederiz, sıhhatler dileriz!`;
-                
-                const encodedMessage = encodeURIComponent(message);
-                window.open(`https://wa.me/90${lastBookedAppointment.phone}?text=${encodedMessage}`, '_blank');
-            };
-
-            return (
-                <div className="min-h-screen bg-black text-white font-sans max-w-md mx-auto border-x border-amber-500/20 shadow-2xl flex flex-col pb-24">
-                    <header className="p-6 text-center border-b border-amber-500/20 bg-neutral-950/50 sticky top-0 backdrop-blur-md z-10 flex flex-col items-center">
-                        <div className="w-12 h-12 rounded-full border-2 border-amber-500 flex items-center justify-center mb-2 bg-black shadow-lg shadow-amber-500/10">
-                            <Scissors />
-                        </div>
-                        <h1 className="text-2xl font-black tracking-wider text-amber-500 font-serif">VELİZMAN</h1>
-                        <p className="text-xs text-neutral-400 tracking-widest mt-0.5">Erkek Kuaförü</p>
-                        <p className="text-[10px] text-neutral-500 italic mt-1">Berber Coşkun Çulan</p>
-                    </header>
-
-                    <div className="flex-1 p-4 space-y-6">
-                        {view === 'customer' && (
-                            <div className="space-y-6">
-                                <section className="bg-neutral-950/60 p-4 rounded-xl border border-amber-500/10">
-                                    <div className="flex items-center gap-2 mb-3 border-b border-neutral-900 pb-2">
-                                        <Scissors />
-                                        <h2 className="text-sm font-bold tracking-wider text-amber-500 uppercase">Hizmetlerimiz</h2>
-                                    </div>
-                                    <div className="space-y-2">
-                                        {SERVICES.map(service => (
-                                            <div 
-                                                key={service.id} 
-                                                onClick={() => handleServiceToggle(service.id)}
-                                                className={`flex items-center justify-between p-3 rounded-lg border transition-all cursor-pointer ${selectedServices.includes(service.id) ? 'bg-amber-500/10 border-amber-500 shadow-md shadow-amber-500/5' : 'bg-neutral-900/40 border-neutral-800 hover:border-neutral-700'}`}
-                                            >
-                                                <span className="text-sm">{service.label}</span>
-                                                <span className="text-sm font-bold text-amber-500">{service.price} ₺</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </section>
-
-                                <form onSubmit={handleBook} className="space-y-4">
-                                    <section className="bg-neutral-950/60 p-4 rounded-xl border border-amber-500/10">
-                                        <div className="flex items-center gap-2 mb-3 border-b border-neutral-900 pb-2">
-                                            <Calendar />
-                                            <h2 className="text-sm font-bold tracking-wider text-amber-500 uppercase">Tarih Seçin</h2>
-                                        </div>
-                                        <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                                            {getNext7Days().map(day => {
-                                                const pct = totalCapacityPercentage(day.dateStr);
-                                                const isFull = pct >= 100;
-                                                return (
-                                                    <div 
-                                                        key={day.dateStr}
-                                                        onClick={() => !isFull && setSelectedDate(day.dateStr)}
-                                                        className={`p-3 rounded-lg border transition-all flex flex-col gap-1 ${isFull ? 'bg-neutral-900/20 border-red-950 opacity-40 cursor-not-allowed' : selectedDate === day.dateStr ? 'bg-amber-500/10 border-amber-500 shadow-md' : 'bg-neutral-900/40 border-neutral-800 hover:border-neutral-700 cursor-pointer'}`}
-                                                    >
-                                                        <div className="flex justify-between items-center">
-                                                            <span className="text-xs font-medium">{day.label}</span>
-                                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isFull ? 'bg-red-500/20 text-red-400' : pct >= 70 ? 'bg-orange-500/20 text-orange-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
-                                                                {isFull ? '%100 (Dolu)' : `%${pct} Dolu`}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </section>
-
-                                    {selectedDate && (
-                                        <section className="bg-neutral-950/60 p-4 rounded-xl border border-amber-500/10">
-                                            <div className="flex items-center gap-2 mb-3 border-b border-neutral-900 pb-2">
-                                                <Clock />
-                                                <h2 className="text-sm font-bold tracking-wider text-amber-500 uppercase">Saat Seçin</h2>
-                                            </div>
-                                            <div className="grid grid-cols-4 gap-2">
-                                                {generateTimeSlots().map(time => {
-                                                    const isTaken = appointments.some(app => app.date === selectedDate && app.time === time);
-                                                    return (
-                                                        <button
-                                                            key={time}
-                                                            type="button"
-                                                            disabled={isTaken}
-                                                            onClick={() => setSelectedTime(time)}
-                                                            className={`py-2 rounded text-xs font-bold border transition-all ${isTaken ? 'bg-neutral-900/20 border-neutral-950 text-neutral-600 line-through cursor-not-allowed' : selectedTime === time ? 'bg-amber-500 text-black border-amber-500 font-black' : 'bg-neutral-900/60 border-neutral-800 hover:border-neutral-700 text-neutral-300'}`}
-                                                        >
-                                                            {time}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                        </section>
-                                    )}
-
-                                    <section className="bg-neutral-950/60 p-4 rounded-xl border border-amber-500/10">
-                                        <div className="flex items-center gap-2 mb-3 border-b border-neutral-900 pb-2">
-                                            <User />
-                                            <h2 className="text-sm font-bold tracking-wider text-amber-500 uppercase">Bilgileriniz</h2>
-                                        </div>
-                                        <div className="space-y-3">
-                                            <div>
-                                                <label className="text-[10px] text-neutral-400 uppercase tracking-wider block mb-1">Adınız Soyadınız</label>
-                                                <input 
-                                                    type="text" 
-                                                    value={name}
-                                                    onChange={(e) => setName(e.target.value)}
-                                                    placeholder="Örn. Ahmet Yılmaz" 
-                                                    className="w-full bg-neutral-900 border border-neutral-800 rounded-lg py-2 px-3 text-sm text-white focus:outline-none focus:border-amber-500"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="text-[10px] text-neutral-400 uppercase tracking-wider block mb-1">Telefon Numaranız</label>
-                                                <input 
-                                                    type="tel" 
-                                                    value={phone}
-                                                    onChange={(e) => setPhone(e.target.value)}
-                                                    placeholder="5xx xxx xx xx" 
-                                                    className="w-full bg-neutral-900 border border-neutral-800 rounded-lg py-2 px-3 text-sm text-white focus:outline-none focus:border-amber-500"
-                                                />
-                                            </div>
-                                        </div>
-                                    </section>
-
-                                    {errorMessage && <p className="text-red-400 text-xs text-center font-semibold bg-red-500/10 py-2 rounded-lg border border-red-500/20">{errorMessage}</p>}
-
-                                    <button 
-                                        type="submit"
-                                        className="w-full bg-amber-500 hover:bg-amber-600 text-black font-black py-3.5 rounded-xl text-sm tracking-wider shadow-lg shadow-amber-500/10 transition-all uppercase flex items-center justify-center gap-2 cursor-pointer"
-                                    >
-                                        <CalendarCheck2 />
-                                        Randevuyu Onayla
-                                    </button>
-                                </form>
-                            </div>
-                        )}
-
-                        {view === 'booking_success' && lastBookedAppointment && (
-                            <section className="bg-neutral-950/80 p-6 rounded-xl border border-amber-500/20 text-center space-y-6 my-12">
-                                <div className="w-16 h-16 bg-amber-500/10 border border-amber-500 rounded-full flex items-center justify-center mx-auto text-amber-500 text-2xl animate-pulse">
-                                    <CheckCircle />
-                                </div>
-                                <div className="space-y-2">
-                                    <h2 className="text-xl font-bold tracking-wide text-amber-500">Randevunuz Alındı!</h2>
-                                    <p className="text-xs text-neutral-400">Kayıt işleminiz başarıyla tamamlanmıştır. Detayları WhatsApp üzerinden iletebilirsiniz.</p>
-                                </div>
-
-                                <button 
-                                    onClick={sendWhatsAppNotification}
-                                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-sm tracking-wide shadow-lg flex items-center justify-center gap-2 cursor-pointer transition-all"
-                                >
-                                    <MessageCircle />
-                                    WhatsApp'ta Paylaş / Bildir
-                                </button>
-                                
-                                <button 
-                                    onClick={() => setView('customer')}
-                                    className="text-xs text-neutral-500 underline hover:text-neutral-300 block mx-auto"
-                                >
-                                    Yeni Randevu Ekranına Dön
-                                </button>
-                            </section>
-                        )}
-
-                        {view === 'admin_login' && !isAdminLoggedIn && (
-                            <section className="bg-neutral-950/60 p-4 rounded-xl border border-amber-500/10 max-w-sm mx-auto mt-12">
-                                <div className="flex items-center gap-2 mb-4 border-b border-neutral-900 pb-2">
-                                    <Lock />
-                                    <h2 className="text-sm font-bold tracking-wider text-amber-500 uppercase">Yönetici Girişi</h2>
-                                </div>
-                                <form onSubmit={handleAdminLoginSubmit} className="space-y-4">
-                                    <div>
-                                        <label className="text-[10px] text-neutral-400 uppercase tracking-wider block mb-1">Kullanıcı Adı</label>
-                                        <input 
-                                            type="text" 
-                                            value={adminLogin.username}
-                                            onChange={(e) => setAdminLogin({ ...adminLogin, username: e.target.value })}
-                                            placeholder="admin"
-                                            className="w-full bg-neutral-900 border border-neutral-800 rounded-lg py-2 px-3 text-sm text-white focus:outline-none focus:border-amber-500"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="text-[10px] text-neutral-400 uppercase tracking-wider block mb-1">Şifre</label>
-                                        <input 
-                                            type="password" 
-                                            value={adminLogin.password}
-                                            onChange={(e) => setAdminLogin({ ...adminLogin, password: e.target.value })}
-                                            placeholder="••••••••"
-                                            className="w-full bg-neutral-900 border border-neutral-800 rounded-lg py-2 px-3 text-sm text-white focus:outline-none focus:border-amber-500"
-                                        />
-                                    </div>
-                                    {errorMessage && <p className="text-red-400 text-xs font-semibold">{errorMessage}</p>}
-                                    <button type="submit" className="w-full bg-amber-500 text-black font-bold py-2.5 rounded-lg text-sm transition-all cursor-pointer">Giriş Yap</button>
-                                </form>
-                            </section>
-                        )}
-
-                        {view === 'admin_dashboard' && isAdminLoggedIn && (
-                            <div className="space-y-6">
-                                {/* KAZANÇ PANELİ */}
-                                <section className="grid grid-cols-2 gap-3">
-                                    <div className="bg-neutral-950/80 p-4 rounded-xl border border-amber-500/10 flex flex-col gap-1">
-                                        <div className="flex items-center gap-1.5 text-neutral-400 text-[10px] uppercase tracking-wider">
-                                            <TrendingUp /> Haftalık Kazanç
-                                        </div>
-                                        <span className="text-lg font-black text-amber-500">{stats.weekly} ₺</span>
-                                        <span className="text-[9px] text-neutral-500">Bu haftaki ciro</span>
-                                    </div>
-                                    <div className="bg-neutral-950/80 p-4 rounded-xl border border-amber-500/10 flex flex-col gap-1">
-                                        <div className="flex items-center gap-1.5 text-neutral-400 text-[10px] uppercase tracking-wider">
-                                            <Wallet /> Aylık Kazanç
-                                        </div>
-                                        <span className="text-lg font-black text-amber-500">{stats.monthly} ₺</span>
-                                        <span className="text-[9px] text-neutral-500">Bu aydaki toplam ciro</span>
-                                    </div>
-                                </section>
-
-                                <section className="bg-neutral-950/60 p-4 rounded-xl border border-amber-500/10">
-                                    <div className="flex items-center gap-2 mb-4 border-b border-neutral-900 pb-2">
-                                        <Edit />
-                                        <h2 className="text-sm font-bold tracking-wider text-amber-500 uppercase">Fiyatları Güncelle</h2>
-                                    </div>
-                                    <div className="space-y-3">
-                                        {SERVICES.map(service => (
-                                            <div key={service.id} className="flex items-center justify-between gap-2">
-                                                <span className="text-xs text-neutral-300">{service.label}</span>
-                                                <div className="flex items-center gap-2">
-                                                    <input 
-                                                        type="number" 
-                                                        defaultValue={service.price}
-                                                        onChange={(e) => handlePriceChange(service.id, e.target.value)}
-                                                        className="w-20 bg-neutral-900 border border-neutral-700 rounded-lg py-1.5 px-2 text-right text-white focus:outline-none focus:border-amber-500 font-mono text-xs"
-                                                    />
-                                                    <span className="text-xs text-amber-500 font-bold">₺</span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                        <button 
-                                            onClick={handleSavePrices}
-                                            disabled={isSaving}
-                                            className="w-full bg-amber-500 text-black font-bold py-3 rounded-xl text-xs mt-2 transition-all cursor-pointer flex items-center justify-center"
-                                        >
-                                            {isSaving ? 'Kaydediliyor...' : saveSuccess ? '✓ Başarıyla Kaydedildi!' : 'Fiyatları Güncelle'}
-                                        </button>
-                                    </div>
-                                </section>
-
-                                <section className="bg-neutral-950/60 p-4 rounded-xl border border-amber-500/10">
-                                    <div className="flex items-center gap-2 mb-4 border-b border-neutral-900 pb-2">
-                                        <Calendar />
-                                        <h2 className="text-sm font-bold tracking-wider text-amber-500 uppercase">Randevu Listesi ({appointments.length})</h2>
-                                    </div>
-                                    <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
-                                        {appointments.map(app => (
-                                            <div key={app.id} className="bg-neutral-900/50 p-3 rounded-lg border border-neutral-800 space-y-1.5">
-                                                <div className="flex justify-between items-center border-b border-neutral-950 pb-1">
-                                                    <span className="text-xs font-black text-amber-500">{app.name}</span>
-                                                    <span className="text-[10px] font-mono bg-neutral-800 px-1.5 py-0.5 rounded text-neutral-300">{app.time}</span>
-                                                </div>
-                                                <div className="text-[10px] text-neutral-400 flex items-center gap-1 pt-0.5">
-                                                    <Phone />
-                                                    <span>{app.phone}</span>
-                                                    <span className="text-neutral-600 mx-1">|</span>
-                                                    <span>{app.date}</span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </section>
-                            </div>
-                        )}
-                    </div>
-
-                    <footer className="mt-auto border-t border-amber-500/10 bg-neutral-950/80 p-2 fixed bottom-0 left-0 right-0 max-w-md mx-auto backdrop-blur-md flex justify-around text-neutral-400 z-20">
-                        <button onClick={() => setView('customer')} className={`flex flex-col items-center gap-1 py-1 px-4 rounded-lg text-[10px] font-bold tracking-wider transition-all cursor-pointer ${view === 'customer' || view === 'booking_success' ? 'text-amber-500' : 'hover:text-neutral-200'}`}>
-                            <Calendar /> Randevu Al
-                        </button>
-                        <button 
-                            onClick={() => {
-                                if(isAdminLoggedIn) { setView('admin_dashboard'); } 
-                                else { setView('admin_login'); }
-                            }} 
-                            className={`flex flex-col items-center gap-1 py-1 px-4 rounded-lg text-[10px] font-bold tracking-wider transition-all cursor-pointer ${view.startsWith('admin') ? 'text-amber-500' : 'hover:text-neutral-200'}`}
-                        >
-                            <Lock /> {isAdminLoggedIn ? 'Panel' : 'Yönetici'}
-                        </button>
-                    </footer>
-                </div>
-            );
+// --- Main App Component ---
+export default function VelizmanApp() {
+  const [user, setUser] = useState(null);
+  const [view, setView] = useState('customer'); // 'customer', 'admin_login', 'admin_dashboard'
+  
+  // Data States
+  const [prices, setPrices] = useState(DEFAULT_PRICES);
+  const [appointments, setAppointments] = useState([]);
+  
+  // App initialization
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
         }
+      } catch (error) {
+        console.error("Auth error:", error);
+      }
+    };
+    initAuth();
+    
+    const unsubscribe = onAuthStateChanged(auth, setUser);
+    return () => unsubscribe();
+  }, []);
 
-        // Uygulamayı tarayıcı ekranına bağlayan köprü
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<VelizmanApp />);
-    </script>
-</body>
-</html>
+  // Fetch Data
+  useEffect(() => {
+    if (!user) return;
+
+    const pricesRef = collection(db, 'artifacts', appId, 'public', 'data', 'prices');
+    const unsubscribePrices = onSnapshot(pricesRef, (snapshot) => {
+      let currentPrices = null;
+      snapshot.forEach(doc => {
+        if (doc.id === 'current') {
+          currentPrices = doc.data();
+        }
+      });
+      if (currentPrices) setPrices(currentPrices);
+    }, (error) => console.error("Fiyat okuma hatası:", error));
+
+    const appointmentsRef = collection(db, 'artifacts', appId, 'public', 'data', 'appointments');
+    const unsubscribeAppointments = onSnapshot(appointmentsRef, (snapshot) => {
+      const apps = [];
+      snapshot.forEach(doc => {
+        apps.push({ id: doc.id, ...doc.data() });
+      });
+      setAppointments(apps);
+    }, (error) => console.error("Randevu okuma hatası:", error));
+
+    return () => {
+      unsubscribePrices();
+      unsubscribeAppointments();
+    };
+  }, [user]);
+
+  return (
+    <div className="min-h-screen bg-neutral-900 text-neutral-100 font-sans selection:bg-amber-500 selection:text-neutral-900">
+      <div className="max-w-md mx-auto bg-neutral-950 min-h-screen shadow-2xl relative flex flex-col">
+        
+        {/* Header */}
+        <div className="bg-neutral-900 p-6 border-b border-amber-500/20 text-center relative z-10 shadow-lg">
+          <div className="w-16 h-16 bg-neutral-800 rounded-full mx-auto flex items-center justify-center mb-3 border border-amber-500/30">
+            <Scissors className="w-8 h-8 text-amber-500" />
+          </div>
+          <h1 className="text-2xl font-bold tracking-wider text-amber-500">VELİZMAN</h1>
+          <p className="text-neutral-400 text-sm tracking-widest mt-1">Erkek Kuaförü</p>
+          <p className="text-neutral-500 text-xs mt-2 italic">Berber Coşkun Çulan</p>
+        </div>
+
+        {/* Content Area */}
+        <div className="flex-1 overflow-y-auto pb-20">
+          {view === 'customer' && (
+             <CustomerView 
+                prices={prices} 
+                appointments={appointments} 
+                user={user} 
+             />
+          )}
+          {view === 'admin_login' && (
+             <AdminLogin setView={setView} />
+          )}
+          {view === 'admin_dashboard' && (
+             <AdminDashboard 
+                prices={prices} 
+                appointments={appointments} 
+                setView={setView} 
+             />
+          )}
+        </div>
+
+        {/* Footer / Admin Toggle */}
+        {view === 'customer' && (
+          <div className="p-4 text-center border-t border-neutral-800 bg-neutral-950">
+             <button 
+                onClick={() => setView('admin_login')}
+                className="inline-flex items-center gap-2 text-xs text-neutral-600 hover:text-amber-500 transition-colors"
+             >
+                <Lock className="w-3 h-3" />
+                Yönetici Girişi
+             </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// --- Customer View Component ---
+function CustomerView({ prices, appointments, user }) {
+  const [selectedDate, setSelectedDate] = useState(getNext7Days()[0]);
+  const [selectedTime, setSelectedTime] = useState('');
+  const [selectedServices, setSelectedServices] = useState([]);
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [bookingStatus, setBookingStatus] = useState('idle'); // idle, loading, success, error
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const requiredSlots = getRequiredSlots(selectedServices);
+
+  // Kapatılacak tüm saatleri hesapla (Randevuların kapladığı süreler)
+  const bookedSlots = [];
+  appointments.filter(app => app.date === selectedDate).forEach(app => {
+    bookedSlots.push(app.time);
+    if (app.slots === 2) {
+      bookedSlots.push(getNextSlot(app.time)); // Eğer 2 slotluk iş ise bir sonraki saati de kapat
+    }
+  });
+
+  const handleServiceToggle = (serviceId) => {
+    if (selectedServices.includes(serviceId)) {
+      setSelectedServices(selectedServices.filter(id => id !== serviceId));
+    } else {
+      setSelectedServices([...selectedServices, serviceId]);
+    }
+  };
+
+  const handleBooking = async () => {
+    if (!selectedTime || selectedServices.length === 0 || !name.trim() || !phone.trim()) {
+      setErrorMessage("Lütfen saat, hizmet, ad soyad ve telefon bilgilerinizi eksiksiz doldurun.");
+      return;
+    }
+
+    // Kapasite kontrolü: Sadece kişi sayısı üzerinden hesaplanır (%10 = 1 kişi)
+    const dayAppsCount = appointments.filter(app => app.date === selectedDate).length;
+    if (dayAppsCount >= 10) {
+      setErrorMessage("Bu gün için maksimum randevu kapasitesine ulaşılmıştır. Lütfen başka bir gün seçin.");
+      return;
+    }
+    
+    setBookingStatus('loading');
+    setErrorMessage('');
+
+    const totalPrice = selectedServices.reduce((sum, serviceId) => sum + (prices[serviceId] || 0), 0);
+
+    try {
+      const appointmentsRef = collection(db, 'artifacts', appId, 'public', 'data', 'appointments');
+      await addDoc(appointmentsRef, {
+        date: selectedDate,
+        time: selectedTime,
+        slots: requiredSlots, // 1 veya 2 slot kapladığını kaydet
+        services: selectedServices,
+        totalPrice: totalPrice,
+        name: name.trim(),
+        phone: phone.trim(),
+        createdAt: new Date().toISOString()
+      });
+      setBookingStatus('success');
+    } catch (error) {
+      console.error("Randevu kaydedilemedi:", error);
+      setErrorMessage("Bir hata oluştu, lütfen tekrar deneyin.");
+      setBookingStatus('idle');
+    }
+  };
+
+  const openWhatsApp = () => {
+    const serviceNames = selectedServices.map(id => SERVICES.find(s => s.id === id)?.label).join(', ');
+    const message = `Merhaba Coşkun Bey, \n\n*${formatDateTR(selectedDate)}* tarihi, saat *${selectedTime}* için *${serviceNames}* randevusu oluşturdum.\n\nİsmim: ${name}\nİyi çalışmalar.`;
+    const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+  };
+
+  const resetForm = () => {
+    setSelectedTime('');
+    setSelectedServices([]);
+    setName('');
+    setPhone('');
+    setBookingStatus('idle');
+  };
+
+  // Randevu alırken saati değiştirdiğinde kontrol et
+  useEffect(() => {
+    if (selectedTime) {
+      const isCurrentlyBooked = bookedSlots.includes(selectedTime);
+      const isNextSlotBooked = bookedSlots.includes(getNextSlot(selectedTime));
+      const isTooLateFor2Slots = requiredSlots === 2 && selectedTime === '20:00';
+      
+      if (isCurrentlyBooked || (requiredSlots === 2 && (isNextSlotBooked || isTooLateFor2Slots))) {
+        setSelectedTime(''); // Seçili saat artık gereksinimleri karşılamıyorsa temizle
+      }
+    }
+  }, [requiredSlots, selectedDate, bookedSlots]);
+
+  if (bookingStatus === 'success') {
+    return (
+      <div className="p-8 text-center flex flex-col items-center justify-center min-h-[60vh] space-y-6 animate-in fade-in zoom-in duration-500">
+        <div className="w-20 h-20 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center">
+          <CheckCircle className="w-10 h-10" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold text-amber-500 mb-2">Randevunuz Alındı!</h2>
+          <p className="text-neutral-300">
+            {formatDateTR(selectedDate)} saat {selectedTime} için randevunuz başarıyla kaydedilmiştir.
+          </p>
+        </div>
+        
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 w-full">
+          <p className="text-amber-500 text-sm font-medium">
+            Önemli Hatırlatma: Randevunuzun onaylanması için aşağıdaki butonu kullanarak bize WhatsApp'tan mesaj göndermeyi lütfen unutmayın.
+          </p>
+        </div>
+        
+        <div className="w-full space-y-3 pt-4 border-t border-neutral-800">
+          <button 
+            onClick={openWhatsApp}
+            className="w-full bg-green-600 hover:bg-green-500 text-white font-medium py-3 rounded-xl flex items-center justify-center gap-2 transition-colors"
+          >
+            <MessageCircle className="w-5 h-5" />
+            WhatsApp'tan Bildir
+          </button>
+          
+          <button 
+            onClick={resetForm}
+            className="w-full bg-neutral-800 hover:bg-neutral-700 text-white font-medium py-3 rounded-xl transition-colors"
+          >
+            Yeni Randevu Al
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4 space-y-8 pb-12">
+      
+      {/* Services & Prices */}
+      <section className="bg-neutral-900 rounded-2xl p-5 border border-neutral-800">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-amber-500 flex items-center gap-2">
+            <Scissors className="w-5 h-5" /> Hizmetlerimiz
+          </h2>
+          {prices.lastUpdated && (
+            <span className="text-[10px] text-neutral-500 bg-neutral-950 px-2 py-1 rounded-full border border-neutral-800">
+              Güncelleme: {new Date(prices.lastUpdated).toLocaleDateString('tr-TR')}
+            </span>
+          )}
+        </div>
+        <div className="grid grid-cols-1 gap-2">
+          {SERVICES.map(service => (
+            <div key={service.id} className="flex justify-between items-center py-2 border-b border-neutral-800/50 last:border-0">
+              <span className="text-neutral-300">{service.label}</span>
+              <span className="font-semibold text-amber-400">{prices[service.id] || '-'} ₺</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Booking Section */}
+      <section className="space-y-5">
+        <h2 className="text-xl font-bold text-white flex items-center gap-2 px-1">
+          <CalendarCheck2 className="w-6 h-6 text-amber-500" />
+          Randevu Al
+        </h2>
+
+        {/* Date Selector */}
+        <div className="space-y-2">
+          <label className="text-sm text-neutral-400 px-1">Tarih Seçin</label>
+          <div className="flex overflow-x-auto gap-2 pb-2 hide-scrollbar">
+            {getNext7Days().map(dateStr => {
+              const d = new Date(dateStr);
+              const dayName = d.toLocaleDateString('tr-TR', { weekday: 'short' });
+              const dayNum = d.getDate();
+              const isSelected = selectedDate === dateStr;
+              
+              const dayAppsCount = appointments.filter(app => app.date === dateStr).length;
+              const percentage = Math.min(dayAppsCount * 10, 100);
+              const isFull = dayAppsCount >= 10;
+              
+              return (
+                <button
+                  key={dateStr}
+                  disabled={isFull}
+                  onClick={() => { setSelectedDate(dateStr); setSelectedTime(''); }}
+                  className={`flex-shrink-0 min-w-[70px] py-3 rounded-xl flex flex-col items-center justify-center transition-all ${
+                    isSelected 
+                      ? 'bg-amber-500 text-neutral-950 font-bold shadow-lg shadow-amber-500/20' 
+                      : isFull
+                        ? 'bg-red-950/20 text-neutral-600 border border-red-900/30 cursor-not-allowed opacity-50'
+                        : 'bg-neutral-900 text-neutral-400 border border-neutral-800 hover:border-amber-500/50'
+                  }`}
+                >
+                  <span className="text-xs uppercase">{dayName}</span>
+                  <span className="text-xl">{dayNum}</span>
+                  <span className={`text-[10px] mt-1 font-bold ${isFull ? 'text-red-500' : isSelected ? 'text-neutral-900' : 'text-amber-500/70'}`}>
+                    %{percentage} {isFull && '(Dolu)'}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Services Multi-Select */}
+        <div className="space-y-2">
+          <label className="text-sm text-neutral-400 px-1">
+            Yaptırmak İstediğiniz İşlemler
+            {requiredSlots === 2 && <span className="ml-2 text-[10px] bg-amber-500/20 text-amber-500 px-2 py-0.5 rounded-full">Uzun İşlem (1 Saat)</span>}
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            {SERVICES.map(service => {
+              const isSelected = selectedServices.includes(service.id);
+              return (
+                <button
+                  key={service.id}
+                  onClick={() => handleServiceToggle(service.id)}
+                  className={`py-2 px-3 text-sm rounded-lg border text-left transition-all flex items-center justify-between ${
+                    isSelected 
+                      ? 'bg-neutral-800 border-amber-500 text-amber-400' 
+                      : 'bg-neutral-900 border-neutral-800 text-neutral-400'
+                  }`}
+                >
+                  <span className="truncate">{service.label}</span>
+                  {isSelected && <CheckCircle className="w-4 h-4 text-amber-500" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Time Selector */}
+        <div className="space-y-2">
+          <label className="text-sm text-neutral-400 px-1">Saat Seçin</label>
+          <div className="grid grid-cols-4 gap-2">
+            {TIME_SLOTS.map(time => {
+              const isCurrentlyBooked = bookedSlots.includes(time);
+              const isNextSlotBooked = bookedSlots.includes(getNextSlot(time));
+              const isTooLateFor2Slots = requiredSlots === 2 && time === '20:00'; // 20:00 + 1 saat mesai dışına taşar
+              
+              let isBooked = isCurrentlyBooked;
+              if (requiredSlots === 2 && (isNextSlotBooked || isTooLateFor2Slots)) {
+                isBooked = true; // Eğer işlem 1 saat sürecekse ve sonraki saat doluysa/mesai bitiyorsa o saat seçilemez.
+              }
+
+              const isSelected = selectedTime === time;
+              return (
+                <button
+                  key={time}
+                  disabled={isBooked}
+                  onClick={() => setSelectedTime(time)}
+                  className={`py-2 text-sm rounded-lg transition-all ${
+                    isBooked 
+                      ? 'bg-red-950/40 text-red-500/50 border border-red-900/30 cursor-not-allowed line-through'
+                      : isSelected
+                        ? 'bg-amber-500 text-neutral-950 font-bold'
+                        : 'bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-amber-500/50'
+                  }`}
+                >
+                  {time}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* User Info Form */}
+        <div className="space-y-3 pt-2">
+          <div className="relative">
+            <User className="w-5 h-5 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input 
+              type="text" 
+              placeholder="Adınız Soyadınız" 
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-amber-500 transition-colors placeholder:text-neutral-600"
+            />
+          </div>
+          <div className="relative">
+            <Phone className="w-5 h-5 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input 
+              type="tel" 
+              placeholder="Telefon Numaranız" 
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-amber-500 transition-colors placeholder:text-neutral-600"
+            />
+          </div>
+        </div>
+
+        {errorMessage && (
+          <div className="p-3 bg-red-950/50 border border-red-900/50 rounded-xl text-red-400 text-sm text-center">
+            {errorMessage}
+          </div>
+        )}
+
+        <button 
+          onClick={handleBooking}
+          disabled={bookingStatus === 'loading'}
+          className="w-full bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold text-lg py-4 rounded-xl shadow-lg shadow-amber-500/20 transition-all disabled:opacity-70 flex items-center justify-center gap-2 mt-4"
+        >
+          {bookingStatus === 'loading' ? (
+            <span className="animate-pulse">İşleniyor...</span>
+          ) : (
+            <>Randevuyu Tamamla <CheckCircle className="w-5 h-5" /></>
+          )}
+        </button>
+
+      </section>
+    </div>
+  );
+}
+
+
+// --- Admin Login Component ---
+function AdminLogin({ setView }) {
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState(false);
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (password === '01051992') {
+      setView('admin_dashboard');
+    } else {
+      setError(true);
+      setPassword('');
+    }
+  };
+
+  return (
+    <div className="p-8 flex flex-col items-center justify-center min-h-[70vh] animate-in fade-in">
+      <div className="w-16 h-16 bg-neutral-900 rounded-full flex items-center justify-center mb-6 border border-neutral-800">
+        <Lock className="w-8 h-8 text-neutral-400" />
+      </div>
+      <h2 className="text-xl font-bold mb-2">Yönetici Paneli</h2>
+      <p className="text-neutral-500 text-sm mb-8 text-center">Randevuları ve fiyatları yönetmek için şifrenizi girin.</p>
+      
+      <form onSubmit={handleLogin} className="w-full space-y-4">
+        <input
+          type="password"
+          placeholder="Şifre"
+          value={password}
+          onChange={(e) => { setPassword(e.target.value); setError(false); }}
+          className={`w-full bg-neutral-900 border ${error ? 'border-red-500' : 'border-neutral-800'} rounded-xl py-3 px-4 text-center text-white focus:outline-none focus:border-amber-500 transition-colors tracking-widest`}
+        />
+        {error && <p className="text-red-400 text-xs text-center">Hatalı şifre, lütfen tekrar deneyin.</p>}
+        
+        <button 
+          type="submit"
+          className="w-full bg-neutral-800 hover:bg-neutral-700 text-white font-medium py-3 rounded-xl transition-colors"
+        >
+          Giriş Yap
+        </button>
+        
+        <button 
+          type="button"
+          onClick={() => setView('customer')}
+          className="w-full text-neutral-500 text-sm py-2 hover:text-white transition-colors"
+        >
+          Müşteri Ekranına Dön
+        </button>
+      </form>
+    </div>
+  );
+}
+
+
+// --- Admin Dashboard Component ---
+function AdminDashboard({ prices, appointments, setView }) {
+  const [activeTab, setActiveTab] = useState('randevular'); // 'randevular', 'fiyatlar'
+  
+  // Appointments state
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [deletingId, setDeletingId] = useState(null);
+
+  // Prices form state
+  const [editPrices, setEditPrices] = useState(prices);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  const handlePriceChange = (id, value) => {
+    setEditPrices(prev => ({ ...prev, [id]: Number(value) || 0 }));
+  };
+
+  const handleSavePrices = async () => {
+    setIsSaving(true);
+    try {
+      const pricesRef = doc(db, 'artifacts', appId, 'public', 'data', 'prices', 'current');
+      await setDoc(pricesRef, {
+        ...editPrices,
+        lastUpdated: new Date().toISOString()
+      });
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (error) {
+      console.error("Fiyat güncellenirken hata:", error);
+    }
+    setIsSaving(false);
+  };
+
+  const handleDeleteApp = async (id) => {
+    try {
+      await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'appointments', id));
+      setDeletingId(null);
+    } catch(error) {
+      console.error("Randevu silinirken hata:", error);
+    }
+  };
+
+  // Filter and sort appointments
+  const filteredApps = appointments
+    .filter(app => app.date === selectedDate)
+    .sort((a, b) => a.time.localeCompare(b.time));
+
+  // Calculate Earnings
+  let dailyTotal = 0;
+  let weeklyTotal = 0;
+  let monthlyTotal = 0;
+
+  appointments.forEach(app => {
+    const appPrice = app.totalPrice || app.services.reduce((sum, sId) => sum + (prices[sId] || 0), 0);
+    if (app.date === selectedDate) {
+      dailyTotal += appPrice;
+    }
+    if (isSameWeek(app.date, selectedDate)) {
+      weeklyTotal += appPrice;
+    }
+    if (isSameMonth(app.date, selectedDate)) {
+      monthlyTotal += appPrice;
+    }
+  });
+
+  return (
+    <div className="flex flex-col h-full animate-in fade-in">
+      {/* Admin Header */}
+      <div className="bg-neutral-900 border-b border-neutral-800 p-4 flex items-center justify-between sticky top-0 z-20">
+        <div className="flex items-center gap-3">
+          <button onClick={() => setView('customer')} className="w-8 h-8 flex items-center justify-center bg-neutral-800 rounded-full text-neutral-400 hover:text-white">
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <span className="font-bold text-amber-500">Yönetim</span>
+        </div>
+        
+        <div className="flex bg-neutral-950 p-1 rounded-lg border border-neutral-800">
+          <button 
+            onClick={() => setActiveTab('randevular')}
+            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${activeTab === 'randevular' ? 'bg-neutral-800 text-white' : 'text-neutral-500'}`}
+          >
+            Randevular
+          </button>
+          <button 
+            onClick={() => setActiveTab('fiyatlar')}
+            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${activeTab === 'fiyatlar' ? 'bg-neutral-800 text-white' : 'text-neutral-500'}`}
+          >
+            Fiyatlar
+          </button>
+        </div>
+      </div>
+
+      <div className="p-4">
+        {/* Tab: Randevular */}
+        {activeTab === 'randevular' && (
+          <div className="space-y-4">
+            <div className="bg-neutral-900 p-3 rounded-xl border border-neutral-800 flex items-center justify-between">
+              <label className="text-sm text-neutral-400 font-medium">Tarih:</label>
+              <input 
+                type="date" 
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="bg-neutral-950 border border-neutral-800 text-white px-3 py-1.5 rounded-lg focus:outline-none focus:border-amber-500"
+              />
+            </div>
+
+            {/* Earnings Summary */}
+            <div className="grid grid-cols-3 gap-2">
+              <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-3 text-center flex flex-col justify-center">
+                <p className="text-[10px] text-neutral-500 uppercase tracking-wider mb-1">Günlük</p>
+                <p className="text-sm font-bold text-amber-500">{dailyTotal} ₺</p>
+              </div>
+              <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-3 text-center flex flex-col justify-center">
+                <p className="text-[10px] text-neutral-500 uppercase tracking-wider mb-1">Haftalık</p>
+                <p className="text-sm font-bold text-amber-500">{weeklyTotal} ₺</p>
+              </div>
+              <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-3 text-center flex flex-col justify-center">
+                <p className="text-[10px] text-neutral-500 uppercase tracking-wider mb-1">Aylık</p>
+                <p className="text-sm font-bold text-amber-500">{monthlyTotal} ₺</p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {filteredApps.length === 0 ? (
+                <div className="text-center py-10 bg-neutral-900/50 rounded-xl border border-neutral-800/50 border-dashed">
+                  <Calendar className="w-8 h-8 text-neutral-600 mx-auto mb-2" />
+                  <p className="text-neutral-500 text-sm">Bu tarihe ait randevu bulunmuyor.</p>
+                </div>
+              ) : (
+                filteredApps.map(app => (
+                  <div key={app.id} className="bg-neutral-900 border-l-4 border-amber-500 rounded-r-xl p-4 shadow-sm relative overflow-hidden">
+                    <div className="absolute top-0 right-0 bg-neutral-800 text-amber-500 text-xs font-bold px-3 py-1 rounded-bl-lg">
+                      {app.time} {app.slots === 2 && <span className="text-[10px] opacity-75">(1s)</span>}
+                    </div>
+                    <h3 className="font-bold text-lg text-white mb-1 pr-16">{app.name}</h3>
+                    <div className="flex items-center gap-2 text-neutral-400 text-sm mb-3">
+                      <Phone className="w-4 h-4" />
+                      <a href={`tel:${app.phone}`} className="hover:text-amber-500 underline decoration-neutral-700 underline-offset-4">
+                        {app.phone}
+                      </a>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {app.services.map(srvId => {
+                        const srvLabel = SERVICES.find(s => s.id === srvId)?.label || srvId;
+                        return (
+                          <span key={srvId} className="bg-neutral-950 text-neutral-300 border border-neutral-800 text-[10px] px-2 py-1 rounded-md">
+                            {srvLabel}
+                          </span>
+                        );
+                      })}
+                    </div>
+                    
+                    <div className="mt-3 pt-3 border-t border-neutral-800 flex justify-between items-center">
+                       <span className="text-xs text-neutral-500 flex items-center gap-1"><Wallet className="w-3 h-3" /> Tahmini Kazanç</span>
+                       <div className="flex items-center gap-3">
+                         <span className="text-sm font-bold text-amber-500">
+                           {app.totalPrice || app.services.reduce((sum, sId) => sum + (prices[sId] || 0), 0)} ₺
+                         </span>
+                         
+                         {/* Delete Appointment Logic */}
+                         {deletingId === app.id ? (
+                           <div className="flex items-center gap-1 bg-red-950/80 rounded-md p-1 border border-red-900">
+                             <button onClick={() => handleDeleteApp(app.id)} className="text-[10px] text-white bg-red-600 px-2 py-1 rounded hover:bg-red-500">Onayla</button>
+                             <button onClick={() => setDeletingId(null)} className="text-neutral-300 p-1 hover:text-white"><X className="w-3 h-3" /></button>
+                           </div>
+                         ) : (
+                           <button 
+                             onClick={() => setDeletingId(app.id)}
+                             className="text-neutral-500 hover:text-red-400 transition-colors bg-neutral-950 p-1.5 rounded-md border border-neutral-800 hover:border-red-900/50"
+                             title="Randevuyu İptal Et"
+                           >
+                             <Trash2 className="w-4 h-4" />
+                           </button>
+                         )}
+                       </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Tab: Fiyatlar */}
+        {activeTab === 'fiyatlar' && (
+          <div className="space-y-4">
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 mb-4">
+              <p className="text-amber-500/80 text-xs flex items-start gap-2">
+                <Edit className="w-4 h-4 shrink-0" />
+                Buradan yaptığınız değişiklikler anında müşteri ekranında güncellenir ve tarih not düşülür.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {SERVICES.map(service => (
+                <div key={service.id} className="flex items-center justify-between bg-neutral-900 p-3 rounded-xl border border-neutral-800">
+                  <span className="text-neutral-300 text-sm font-medium">{service.label}</span>
+                  <div className="flex items-center gap-2">
+                    <input 
+                      type="number" 
+                      value={editPrices[service.id] || ''}
+                      onChange={(e) => handlePriceChange(service.id, e.target.value)}
+                      className="w-20 bg-neutral-950 border border-neutral-700 rounded-lg py-1.5 px-2 text-right text-white focus:outline-none focus:border-amber-500 font-mono"
+                    />
+                    <span className="text-neutral-500 font-medium">₺</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button 
+              onClick={handleSavePrices}
+              disabled={isSaving}
+              className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all mt-6 ${
+                saveSuccess 
+                  ? 'bg-green-600 text-white' 
+                  : 'bg-amber-500 hover:bg-amber-400 text-neutral-950'
+              }`}
+            >
+              {isSaving ? 'Kaydediliyor...' : saveSuccess ? 'Başarıyla Kaydedildi!' : 'Fiyatları Güncelle'}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
