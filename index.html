@@ -3,6 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Velizman Randevu Sistemi</title>
+    <style>
+        /* GEMİNİ'DEN ALDIĞIN TASARIM (CSS) KODLARINI BURAYA YAPIŞTIR */
+        
+    </style>
+</head>
+<body>
+
+    <script type="module">
+        // Firebase kütüphanelerini internetten doğrudan çekiyoruz
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        // Senin Firebase Anahtarın
+        const firebaseConfig = {
+            apiKey: "AIzaSyB_spuG1O00pR6VOLS00bQr-zMs6UnnTAU",
+            authDomain: "velizman-app.firebaseapp.com",
+            projectId: "velizman-app",
+            storageBucket: "velizman-app.firebasestorage.app",
+            messagingSenderId: "996166116428",
+            appId: "1:996166116428:web:a07c132435e7567e9240e9",
+            measurementId: "G-3ZQWED56XX"
+        };
+
+        // Firebase ve Veritabanını (Firestore) Başlat
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Velizman Kuaförü</title>
     <!-- Tailwind CSS (Kurulumsuz CDN versiyonu) -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -31,13 +63,18 @@
             <p class="text-neutral-500 text-xs mt-2 italic">Berber Coşkun Çulan</p>
         </div>
 
+        <!-- Uyarı Alanı (Sadece config eksikse görünür) -->
+        <div id="config-warning" class="hidden bg-red-900/50 border-b border-red-500 p-4 text-center text-sm text-red-200">
+            ⚠️ <strong>Sistem Uyarısı:</strong> Firebase veritabanı ayarları yapılmamış. Randevular şu an kaydedilemez. Lütfen kod içindeki "API_KEY_BURAYA" kısımlarını kendi Firebase bilgilerinizle güncelleyin.
+        </div>
+
         <!-- Dinamik İçerik Alanı -->
         <div id="app-content" class="flex-1 overflow-y-auto pb-20 fade-in">
             <!-- JavaScript burayı dolduracak -->
         </div>
 
         <!-- Footer / Yönetici Girişi -->
-        <div id="app-footer" class="p-4 text-center border-t border-neutral-800 bg-neutral-950">
+        <div id="app-footer" class="p-4 text-center border-t border-neutral-800 bg-neutral-950 hidden">
             <button data-action="set-view" data-view="admin_login" class="inline-flex items-center gap-2 text-xs text-neutral-600 hover:text-amber-500 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 Yönetici Girişi
@@ -54,6 +91,8 @@
 
         // --- Firebase Yapılandırması ---
         let firebaseConfig = {};
+        let isConfigMissing = false;
+
         if (typeof __firebase_config !== 'undefined') {
             firebaseConfig = JSON.parse(__firebase_config);
         } else {
@@ -67,6 +106,13 @@
                 appId: "APP_ID"
             };
         }
+
+        // Config kontrolü (Eğer API key değiştirilmemişse uyarı ver)
+        if (firebaseConfig.apiKey === "API_KEY_BURAYA") {
+            isConfigMissing = true;
+            document.getElementById('config-warning').classList.remove('hidden');
+        }
+
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'velizman-app-id';
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -155,9 +201,9 @@
         // --- Uygulama Durumu (State) ---
         const state = {
             user: null,
-            view: 'customer', // customer, admin_login, admin_dashboard
+            view: 'customer',
             
-            // Global Veriler
+            // Global Veriler (Veritabanı yoksa gösterilecek varsayılanlar)
             prices: {
                 sac: 200, sakal: 100, cilt: 150, yikama: 50, sac_sakal_yikama: 300, sac_yikama: 220, lastUpdated: new Date().toISOString()
             },
@@ -175,7 +221,7 @@
             // Admin Formu
             adminPassword: '',
             adminError: false,
-            adminTab: 'randevular', // randevular, fiyatlar
+            adminTab: 'randevular',
             adminSelectedDate: new Date().toISOString().split('T')[0],
             editPrices: {},
             isSaving: false,
@@ -183,45 +229,56 @@
             deletingId: null
         };
 
-        // --- Firebase Dinleyicileri ---
+        // --- Firebase Dinleyicileri (Sadece Config Varsa Çalışır) ---
         const initFirebase = async () => {
+            if (isConfigMissing) return; // Ayarlar yoksa bağlanmayı deneme bile
+            
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
                     await signInAnonymously(auth);
                 }
-            } catch (error) { console.error("Auth error:", error); }
+            } catch (error) { 
+                console.error("Auth error:", error); 
+                state.errorMessage = "Sunucu bağlantı hatası: " + error.message;
+                render();
+            }
         };
 
-        onAuthStateChanged(auth, (user) => {
-            state.user = user;
-            if (user) {
-                // Fiyatları Dinle
-                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'prices'), (snapshot) => {
-                    snapshot.forEach(doc => {
-                        if (doc.id === 'current') {
-                            state.prices = doc.data();
-                            if(Object.keys(state.editPrices).length === 0) {
-                                state.editPrices = { ...state.prices };
+        if (!isConfigMissing) {
+            onAuthStateChanged(auth, (user) => {
+                state.user = user;
+                if (user) {
+                    // Fiyatları Dinle
+                    onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'prices'), (snapshot) => {
+                        snapshot.forEach(doc => {
+                            if (doc.id === 'current') {
+                                state.prices = doc.data();
+                                if(Object.keys(state.editPrices).length === 0) {
+                                    state.editPrices = { ...state.prices };
+                                }
                             }
-                        }
+                        });
+                        render();
+                    }, (error) => {
+                        console.error("Fiyat dinleme hatası", error);
                     });
-                    render();
-                });
 
-                // Randevuları Dinle
-                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'appointments'), (snapshot) => {
-                    const apps = [];
-                    snapshot.forEach(doc => apps.push({ id: doc.id, ...doc.data() }));
-                    state.appointments = apps;
-                    validateSelectedTime(); // Zaman kısıtlamalarını kontrol et
-                    render();
-                });
-            }
-        });
-
-        initFirebase();
+                    // Randevuları Dinle
+                    onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'appointments'), (snapshot) => {
+                        const apps = [];
+                        snapshot.forEach(doc => apps.push({ id: doc.id, ...doc.data() }));
+                        state.appointments = apps;
+                        validateSelectedTime();
+                        render();
+                    }, (error) => {
+                        console.error("Randevu dinleme hatası", error);
+                    });
+                }
+            });
+            initFirebase();
+        }
 
         // --- Validation Helpers ---
         function validateSelectedTime() {
@@ -238,7 +295,7 @@
             const isTooLateFor2Slots = requiredSlots === 2 && state.selectedTime === '20:00';
 
             if (isCurrentlyBooked || (requiredSlots === 2 && (isNextSlotBooked || isTooLateFor2Slots))) {
-                state.selectedTime = ''; // Geçersiz olduysa temizle
+                state.selectedTime = '';
             }
         }
 
@@ -247,7 +304,6 @@
         const footerDiv = document.getElementById('app-footer');
 
         function render() {
-            // Footer kontrolü
             if(state.view === 'customer' && state.bookingStatus !== 'success') {
                 footerDiv.style.display = 'block';
             } else {
@@ -265,14 +321,12 @@
         function renderCustomer() {
             const requiredSlots = getRequiredSlots(state.selectedServices);
             
-            // Kapatılacak saatler
             const bookedSlots = [];
             state.appointments.filter(app => app.date === state.selectedDate).forEach(app => {
                 bookedSlots.push(app.time);
                 if (app.slots === 2) bookedSlots.push(getNextSlot(app.time));
             });
 
-            // Fiyatlar HTML
             const servicesHtml = SERVICES.map(service => `
                 <div class="flex justify-between items-center py-2 border-b border-neutral-800/50 last:border-0">
                     <span class="text-neutral-300">${service.label}</span>
@@ -280,7 +334,6 @@
                 </div>
             `).join('');
 
-            // Tarihler HTML
             const datesHtml = getNext7Days().map(dateStr => {
                 const d = new Date(dateStr);
                 const dayName = d.toLocaleDateString('tr-TR', { weekday: 'short' });
@@ -308,7 +361,6 @@
                 </button>`;
             }).join('');
 
-            // Hizmet Seçimi HTML
             const serviceSelectHtml = SERVICES.map(service => {
                 const isSelected = state.selectedServices.includes(service.id);
                 let classes = isSelected ? 'bg-neutral-800 border-amber-500 text-amber-400' : 'bg-neutral-900 border-neutral-800 text-neutral-400';
@@ -320,7 +372,6 @@
                 </button>`;
             }).join('');
 
-            // Saatler HTML
             const timesHtml = TIME_SLOTS.map(time => {
                 const isCurrentlyBooked = bookedSlots.includes(time);
                 const isNextSlotBooked = bookedSlots.includes(getNextSlot(time));
@@ -513,7 +564,6 @@
                 }).join('');
             }
 
-            // Fiyatlar Sekmesi İçeriği
             const pricesHtml = SERVICES.map(service => `
                 <div class="flex items-center justify-between bg-neutral-900 p-3 rounded-xl border border-neutral-800">
                     <span class="text-neutral-300 text-sm font-medium">${service.label}</span>
@@ -594,6 +644,12 @@
                     render(); return;
                 }
                 
+                // Config yoksa hata ver
+                if (isConfigMissing) {
+                    state.errorMessage = "Veritabanı bağlantısı yok (Config eksik). Lütfen Firebase kurulumunuzu tamamlayın.";
+                    render(); return;
+                }
+                
                 state.bookingStatus = 'loading';
                 state.errorMessage = '';
                 render();
@@ -601,7 +657,10 @@
                 try {
                     const requiredSlots = getRequiredSlots(state.selectedServices);
                     const totalPrice = state.selectedServices.reduce((sum, sId) => sum + (state.prices[sId] || 0), 0);
-                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'appointments'), {
+                    
+                    // Firebase'e kaydetmeyi dene (Burası 10 saniye sürerse timeout ekleyebiliriz ama Firebase genelde otomatik fırlatır)
+                    const appRef = collection(db, 'artifacts', appId, 'public', 'data', 'appointments');
+                    await addDoc(appRef, {
                         date: state.selectedDate,
                         time: state.selectedTime,
                         slots: requiredSlots,
@@ -611,14 +670,17 @@
                         phone: state.phone.trim(),
                         createdAt: new Date().toISOString()
                     });
+                    
                     state.bookingStatus = 'success';
                 } catch (error) {
-                    state.errorMessage = "Hata oluştu, tekrar deneyin.";
+                    // Firebase yetki (Permission) hatası veya ağ hatası
+                    state.errorMessage = "Veritabanına kaydedilirken hata oluştu: " + error.message;
                     state.bookingStatus = 'idle';
                 }
                 render();
             },
             async deleteApp(id) {
+                if (isConfigMissing) return;
                 try {
                     await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'appointments', id));
                     state.deletingId = null;
@@ -626,6 +688,7 @@
                 render();
             },
             async savePrices() {
+                if (isConfigMissing) return;
                 state.isSaving = true; render();
                 try {
                     await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'prices', 'current'), {
@@ -634,13 +697,16 @@
                     });
                     state.saveSuccess = true;
                     setTimeout(() => { state.saveSuccess = false; render(); }, 3000);
-                } catch(e) { console.error(e); }
+                } catch(e) { 
+                    console.error(e); 
+                    alert("Fiyatlar güncellenemedi: " + e.message);
+                }
                 state.isSaving = false;
                 render();
             }
         };
 
-        // --- Olay Dinleyicileri (Event Delegation) ---
+        // --- Olay Dinleyicileri ---
         document.addEventListener('click', (e) => {
             const btn = e.target.closest('[data-action]');
             if (!btn) return;
@@ -697,7 +763,6 @@
             }
         });
 
-        // İnputlar re-render'ı tetiklememeli (odak kaybolmasını engellemek için)
         document.addEventListener('input', (e) => {
             if (e.target.dataset.model === 'name') state.name = e.target.value;
             if (e.target.dataset.model === 'phone') state.phone = e.target.value;
@@ -708,7 +773,6 @@
             }
         });
 
-        // Enter tuşu ile giriş yapma desteği
         document.addEventListener('keypress', (e) => {
             if(e.key === 'Enter' && state.view === 'admin_login' && e.target.dataset.model === 'adminPassword') {
                 document.querySelector('[data-action="login"]').click();
@@ -717,6 +781,10 @@
 
         // İlk ekranı çizdir
         render();
+    </script>
+</body>
+</html>
+
     </script>
 </body>
 </html>
