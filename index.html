@@ -1,8 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, collection, onSnapshot, doc, setDoc, addDoc, deleteDoc } from 'firebase/firestore';
-import { Scissors, Calendar, Clock, User, Phone, CheckCircle, Lock, Edit, ChevronLeft, CalendarCheck2, MessageCircle, Wallet, Trash2, X } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Velizman - Berber Randevu</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+
 
 // --- Firebase Configuration ---
 const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
@@ -799,3 +811,10 @@ function AdminDashboard({ prices, appointments, setView }) {
     </div>
   );
 }
+
+              // React uygulamasını ekrana basıyoruz
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<VelizmanApp />); // Burada senin ana fonksiyonunun/bileşeninin adı olmalı (Örn: VelizmanApp veya App)
+    </script>
+</body>
+</html>
