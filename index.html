@@ -83,17 +83,18 @@
                 <!-- Icon JS Tarafından Eklenecek -->
             </button>
 
+            <!-- CANLI SAAT GÖSTERGESİ -->
+            <div class="absolute top-5 left-6 flex flex-col items-start justify-center text-amber-500 transition-colors z-20">
+                <span id="live-time" class="text-xl font-bold font-mono tracking-widest leading-none" style="text-shadow: 0 0 10px rgba(217, 119, 6, 0.3);">--:--</span>
+                <span id="live-date" class="text-[9px] uppercase tracking-widest opacity-70 mt-1">--</span>
+            </div>
+
             <div class="w-16 h-16 bg-neutral-800 rounded-full mx-auto flex items-center justify-center mb-3 border border-amber-500/30 text-amber-500">
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
             </div>
             <h1 class="text-2xl font-bold tracking-wider text-amber-500">VELİZMAN</h1>
             <p class="text-neutral-400 text-sm tracking-widest mt-1">Erkek Kuaförü</p>
             <p class="text-neutral-500 text-xs mt-2 italic">Berber Coşkun Çulan</p>
-        </div>
-
-        <!-- Uyarı Alanı (Config eksikse görünür) -->
-        <div id="config-warning" class="hidden bg-red-900/50 border-b border-red-500 p-4 text-center text-sm text-red-200">
-            ⚠️ <strong>Sistem Uyarısı:</strong> Firebase veritabanı ayarları yapılmamış. Lütfen kod içindeki "API_KEY_BURAYA" kısımlarını kendi Firebase bilgilerinizle güncelleyin.
         </div>
 
         <!-- Dinamik İçerik Alanı -->
@@ -130,11 +131,6 @@
                 messagingSenderId: "SENDER_ID",
                 appId: "APP_ID"
             };
-        }
-
-        if (firebaseConfig.apiKey === "API_KEY_BURAYA") {
-            isConfigMissing = true;
-            document.getElementById('config-warning').classList.remove('hidden');
         }
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'velizman-app-id';
@@ -179,12 +175,17 @@
         };
         const ALL_TIME_SLOTS = generateTimeSlots();
 
+        const getLocalISO = (d) => {
+            const offset = d.getTimezoneOffset() * 60000;
+            return new Date(d.getTime() - offset).toISOString().split('T')[0];
+        };
+
         const getNext7Days = () => {
             const dates = [];
             for (let i = 0; i < 7; i++) {
                 const d = new Date();
                 d.setDate(d.getDate() + i);
-                dates.push(d.toISOString().split('T')[0]);
+                dates.push(getLocalISO(d));
             }
             return dates;
         };
@@ -309,10 +310,17 @@
                 }
             });
 
+            const now = new Date();
+            const todayStr = getLocalISO(now);
+            const currentMins = now.getHours() * 60 + now.getMinutes();
+
             let isValid = true;
             let checkTime = state.selectedTime;
             for(let i=0; i<requiredSlots; i++) {
-                if (checkTime < wh.start || checkTime >= wh.end || bookedSlots.includes(checkTime)) {
+                const [h, m] = checkTime.split(':').map(Number);
+                const isPast = (state.selectedDate === todayStr) && ((h * 60 + m) <= currentMins);
+
+                if (checkTime < wh.start || checkTime >= wh.end || bookedSlots.includes(checkTime) || isPast) {
                     isValid = false; break;
                 }
                 checkTime = getNextSlot(checkTime);
@@ -390,16 +398,22 @@
                 </button>`;
             }).join('');
 
+            const now = new Date();
+            const todayStr = getLocalISO(now);
+            const currentMins = now.getHours() * 60 + now.getMinutes();
+
             const timesHtml = ALL_TIME_SLOTS.map(time => {
                 let isBooked = false;
                 let checkTime = time;
                 
-                // Mesai dışıysa gizle veya pasif yap
                 if (time < wh.start || time >= wh.end) {
                     isBooked = true; // Mesai dışı
                 } else {
                     for(let i=0; i<requiredSlots; i++) {
-                        if (checkTime >= wh.end || bookedSlots.includes(checkTime)) {
+                        const [ch, cm] = checkTime.split(':').map(Number);
+                        const isCheckPast = (state.selectedDate === todayStr) && ((ch * 60 + cm) <= currentMins);
+
+                        if (checkTime >= wh.end || bookedSlots.includes(checkTime) || isCheckPast) {
                             isBooked = true; break;
                         }
                         checkTime = getNextSlot(checkTime);
@@ -517,7 +531,7 @@
             const getLabel = (sId) => state.services.find(s=>s.id === sId)?.label || sId;
 
             // --- TAB 1: RANDEVULAR (GRUP HALİNDE VE PROAKTİF) ---
-            const todayStr = new Date().toISOString().split('T')[0];
+            const todayStr = getLocalISO(new Date());
             
             // Kazançları HER ZAMAN "Bugün" bazlı hesapla
             let dTotal = 0, wTotal = 0, mTotal = 0;
@@ -828,6 +842,31 @@
                 themeBtn.innerHTML = icons.moon;
             }
         });
+
+        // --- CANLI SAAT YÖNETİMİ ---
+        const startLiveClock = () => {
+            const timeEl = document.getElementById('live-time');
+            const dateEl = document.getElementById('live-date');
+            
+            const tick = () => {
+                const now = new Date();
+                if(timeEl) timeEl.innerText = now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+                if(dateEl) dateEl.innerText = now.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
+                
+                // Tam dakika başlarında geçmiş saatleri gizlemek için arayüzü sessizce yenile (Eğer klavye odaklanmamışsa)
+                if (now.getSeconds() === 0 && state.view === 'customer' && state.bookingStatus === 'idle') {
+                    const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+                    if (activeTag !== 'input' && activeTag !== 'select') {
+                        validateSelectedTime();
+                        render();
+                    }
+                }
+            };
+            
+            tick(); // İlk açılış
+            setInterval(tick, 1000); // Saniyede bir tıkla
+        };
+        startLiveClock();
 
         render();
     </script>
