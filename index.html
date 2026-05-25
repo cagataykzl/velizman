@@ -117,15 +117,29 @@
         if (typeof __firebase_config !== 'undefined') {
             firebaseConfig = JSON.parse(__firebase_config);
         } else {
-            // LÜTFEN FIREBASE CONSOLE'DAN ALDIĞIN EXACT (BİREBİR) AYARLARI BURAYA YAPIŞTIR.
-            // Eğer "apiKey" kısmında harf eksikse veya yanlışsa auth/api-key-not-valid hatası alırsın.
-            firebaseConfig = {
-                apiKey: "API_KEY_BURAYA",
-                authDomain: "PROJE_ID.firebaseapp.com",
-                projectId: "PROJE_ID",
-                storageBucket: "PROJE_ID.appspot.com",
-                messagingSenderId: "SENDER_ID",
-                appId: "APP_ID"
+            <script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyB_spuG1O00pR6VOLS00bQr-zMs6UnnTAU",
+    authDomain: "velizman-app.firebaseapp.com",
+    projectId: "velizman-app",
+    storageBucket: "velizman-app.firebasestorage.app",
+    messagingSenderId: "996166116428",
+    appId: "1:996166116428:web:a07c132435e7567e9240e9",
+    measurementId: "G-3ZQWED56XX"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
             };
         }
 
