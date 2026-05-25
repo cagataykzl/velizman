@@ -78,10 +78,7 @@
         
         <!-- Sabit Başlık -->
         <div class="bg-neutral-900 p-6 border-b border-amber-500/20 text-center relative z-10 shadow-lg">
-            <!-- TEMA DEĞİŞTİRME BUTONU -->
-            <button id="theme-toggle" class="absolute top-6 right-6 w-9 h-9 flex items-center justify-center bg-neutral-800 rounded-full border border-neutral-700 text-amber-500 transition-colors z-20 hover:scale-110">
-                <!-- Icon JS Tarafından Eklenecek -->
-            </button>
+            <button id="theme-toggle" class="absolute top-6 right-6 w-9 h-9 flex items-center justify-center bg-neutral-800 rounded-full border border-neutral-700 text-amber-500 transition-colors z-20 hover:scale-110"></button>
 
             <!-- CANLI SAAT GÖSTERGESİ -->
             <div class="absolute top-5 left-6 flex flex-col items-start justify-center text-amber-500 transition-colors z-20">
@@ -107,7 +104,6 @@
                 Yönetici Girişi
             </button>
         </div>
-
     </div>
 
     <!-- Uygulama Mantığı (Vanilla JS) -->
@@ -117,14 +113,14 @@
         import { getFirestore, collection, onSnapshot, doc, setDoc, addDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
         let firebaseConfig = {};
-        let isConfigMissing = false;
 
         if (typeof __firebase_config !== 'undefined') {
             firebaseConfig = JSON.parse(__firebase_config);
         } else {
-            // GITHUB PAGES İÇİN BURAYI KENDİ BİLGİLERİNLE DOLDUR:
+            // LÜTFEN FIREBASE CONSOLE'DAN ALDIĞIN EXACT (BİREBİR) AYARLARI BURAYA YAPIŞTIR.
+            // Eğer "apiKey" kısmında harf eksikse veya yanlışsa auth/api-key-not-valid hatası alırsın.
             firebaseConfig = {
-                apiKey: "01051992",
+                apiKey: "API_KEY_BURAYA",
                 authDomain: "PROJE_ID.firebaseapp.com",
                 projectId: "PROJE_ID",
                 storageBucket: "PROJE_ID.appspot.com",
@@ -164,7 +160,6 @@
             { id: 'sac_sakal_yikama', label: 'Saç + Sakal + Yıkama', price: 0, duration: 2 }
         ];
 
-        // 08:00 - 24:00 (23:30 son)
         const generateTimeSlots = () => {
             const slots = [];
             for (let h = 8; h <= 23; h++) {
@@ -231,11 +226,11 @@
             // Admin
             adminPassword: '',
             adminError: false,
-            adminTab: 'randevular', // randevular, hizmetler, saatler
-            adminAppFilter: 'upcoming', // upcoming, past
+            adminTab: 'randevular', 
+            adminAppFilter: 'upcoming', 
             
-            // Düzenleme Stateleri
-            adminServices: [], 
+            // Düzenleme Stateleri (Hataları önlemek için baştan dolduruldu)
+            adminServices: JSON.parse(JSON.stringify(DEFAULT_SERVICES)), 
             adminWorkingHours: {},
             isSaving: false,
             saveSuccess: false,
@@ -243,7 +238,6 @@
         };
 
         const initFirebase = async () => {
-            if (isConfigMissing) return;
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
@@ -251,37 +245,37 @@
                     await signInAnonymously(auth);
                 }
             } catch (error) { 
-                console.error(error); 
-                state.errorMessage = "Bağlantı hatası: " + error.message; render();
+                console.error("Firebase Auth Hatası:", error); 
+                state.errorMessage = "Bağlantı hatası: " + error.message; 
+                render();
             }
         };
 
-        if (!isConfigMissing) {
-            onAuthStateChanged(auth, (user) => {
-                state.user = user;
-                if (user) {
-                    onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general'), (docSnap) => {
-                        if (docSnap.exists()) {
-                            const data = docSnap.data();
-                            state.services = data.services || DEFAULT_SERVICES;
-                            state.workingHours = data.workingHours || {};
-                        }
-                        if (state.adminServices.length === 0) state.adminServices = JSON.parse(JSON.stringify(state.services));
-                        if (Object.keys(state.adminWorkingHours).length === 0) state.adminWorkingHours = JSON.parse(JSON.stringify(state.workingHours));
-                        render();
-                    });
+        onAuthStateChanged(auth, (user) => {
+            state.user = user;
+            if (user) {
+                onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general'), (docSnap) => {
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        state.services = data.services || DEFAULT_SERVICES;
+                        state.workingHours = data.workingHours || {};
+                        state.adminServices = JSON.parse(JSON.stringify(state.services));
+                        state.adminWorkingHours = JSON.parse(JSON.stringify(state.workingHours));
+                    }
+                    render();
+                });
 
-                    onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'appointments'), (snapshot) => {
-                        const apps = [];
-                        snapshot.forEach(d => apps.push({ id: d.id, ...d.data() }));
-                        state.appointments = apps;
-                        validateSelectedTime();
-                        render();
-                    });
-                }
-            });
-            initFirebase();
-        }
+                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'appointments'), (snapshot) => {
+                    const apps = [];
+                    snapshot.forEach(d => apps.push({ id: d.id, ...d.data() }));
+                    state.appointments = apps;
+                    validateSelectedTime();
+                    render();
+                });
+            }
+        });
+        
+        initFirebase();
 
         const getRequiredSlots = (selectedIds) => {
             if (selectedIds.length === 0) return 1;
@@ -530,10 +524,9 @@
             const getPrice = (sId) => state.services.find(s=>s.id === sId)?.price || 0;
             const getLabel = (sId) => state.services.find(s=>s.id === sId)?.label || sId;
 
-            // --- TAB 1: RANDEVULAR (GRUP HALİNDE VE PROAKTİF) ---
+            // --- TAB 1: RANDEVULAR ---
             const todayStr = getLocalISO(new Date());
             
-            // Kazançları HER ZAMAN "Bugün" bazlı hesapla
             let dTotal = 0, wTotal = 0, mTotal = 0;
             state.appointments.forEach(app => {
                 const appPrice = app.totalPrice || app.services.reduce((sum, sId) => sum + getPrice(sId), 0);
@@ -542,7 +535,6 @@
                 if (isSameMonth(app.date, todayStr)) mTotal += appPrice;
             });
 
-            // Randevuları filtrele (Yaklaşan vs Geçmiş)
             let filteredApps = [];
             if (state.adminAppFilter === 'upcoming') {
                 filteredApps = state.appointments.filter(app => app.date >= todayStr).sort((a, b) => {
@@ -551,12 +543,11 @@
                 });
             } else {
                 filteredApps = state.appointments.filter(app => app.date < todayStr).sort((a, b) => {
-                    if (a.date !== b.date) return b.date.localeCompare(a.date); // Tarihe göre azalan
-                    return b.time.localeCompare(a.time); // Saate göre azalan
+                    if (a.date !== b.date) return b.date.localeCompare(a.date); 
+                    return b.time.localeCompare(a.time); 
                 });
             }
 
-            // Randevuları Tarihe Göre Gruplayarak Çiz
             let appointmentsHtml = '';
             if (filteredApps.length === 0) {
                 appointmentsHtml = `
@@ -566,7 +557,6 @@
             } else {
                 let currentGroupDate = '';
                 filteredApps.forEach(app => {
-                    // Yeni bir gün başlığı ekle
                     if (app.date !== currentGroupDate) {
                         currentGroupDate = app.date;
                         let dateLabel = app.date === todayStr ? 'Bugün' : formatDateTR(app.date);
@@ -653,14 +643,12 @@
                 <div class="p-4">
                     ${state.adminTab === 'randevular' ? `
                     <div class="space-y-4">
-                        <!-- Kazançlar Her Zaman Bugüne Göre Dinamik -->
                         <div class="grid grid-cols-3 gap-2 text-center">
                             <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-2"><p class="text-[10px] text-neutral-500 uppercase">Bugün</p><p class="text-sm font-bold text-amber-500">${dTotal} ₺</p></div>
                             <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-2"><p class="text-[10px] text-neutral-500 uppercase">Bu Hafta</p><p class="text-sm font-bold text-amber-500">${wTotal} ₺</p></div>
                             <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-2"><p class="text-[10px] text-neutral-500 uppercase">Bu Ay</p><p class="text-sm font-bold text-amber-500">${mTotal} ₺</p></div>
                         </div>
                         
-                        <!-- Gruplanmış Randevu Filtre Butonları -->
                         <div class="flex bg-neutral-900 p-1 rounded-lg border border-neutral-800">
                             <button data-action="set-app-filter" data-filter="upcoming" class="flex-1 px-3 py-2 text-xs font-medium rounded-md transition-colors ${state.adminAppFilter === 'upcoming' ? 'bg-neutral-800 text-amber-500' : 'text-neutral-500'}">Gelecek Randevular</button>
                             <button data-action="set-app-filter" data-filter="past" class="flex-1 px-3 py-2 text-xs font-medium rounded-md transition-colors ${state.adminAppFilter === 'past' ? 'bg-neutral-800 text-amber-500' : 'text-neutral-500'}">Geçmiş Randevular</button>
@@ -717,17 +705,12 @@
                 if (!state.selectedTime || state.selectedServices.length === 0 || !state.name.trim() || !state.phone.trim()) {
                     state.errorMessage = "Lütfen eksiksiz doldurun."; render(); return;
                 }
-                if (isConfigMissing) {
-                    state.errorMessage = "Firebase ayarları eksik."; render(); return;
+                if (!state.user) {
+                    state.errorMessage = "Veritabanı bağlantı hatası. Lütfen API şifrenizin doğruluğunu kontrol edin."; render(); return;
                 }
                 
-                // İşlem başarılı olursa silinmesin diye veriyi güvenli bir şekilde yedekliyoruz
                 state.lastBooked = {
-                    date: state.selectedDate,
-                    time: state.selectedTime,
-                    services: [...state.selectedServices],
-                    name: state.name,
-                    phone: state.phone
+                    date: state.selectedDate, time: state.selectedTime, services: [...state.selectedServices], name: state.name, phone: state.phone
                 };
                 
                 state.bookingStatus = 'loading'; state.errorMessage = ''; render();
@@ -755,21 +738,24 @@
                 render();
             } else if (action === 'set-admin-tab') {
                 state.adminTab = btn.dataset.tab; render();
-            } else if (action === 'set-app-filter') { // YENİ: Yaklaşan / Geçmiş filtresi
+            } else if (action === 'set-app-filter') { 
                 state.adminAppFilter = btn.dataset.filter; render();
             } else if (action === 'prompt-delete') {
                 state.deletingId = btn.dataset.id; render();
             } else if (action === 'cancel-delete') {
                 state.deletingId = null; render();
             } else if (action === 'confirm-delete') {
-                if (isConfigMissing) return;
+                if (!state.user) return;
                 try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'appointments', btn.dataset.id)); state.deletingId = null; render(); } catch(e){}
             } else if (action === 'add-srv') {
                 state.adminServices.push({ id: 'srv_' + Date.now(), label: '', price: 0, duration: 1 }); render();
             } else if (action === 'remove-srv') {
                 state.adminServices.splice(btn.dataset.index, 1); render();
             } else if (action === 'save-settings') {
-                if (isConfigMissing) return;
+                if (!state.user) {
+                    alert("Veritabanı bağlantı hatası. Değişiklikler kaydedilemez. API Şifrenizi doğrulayın.");
+                    return;
+                }
                 state.isSaving = true; render();
                 try {
                     await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general'), {
@@ -784,7 +770,7 @@
             }
         });
 
-        // Event Delegation for Inputs (to avoid focus loss)
+        // Event Delegation for Inputs
         document.addEventListener('input', (e) => {
             if (e.target.dataset.model === 'name') state.name = e.target.value;
             if (e.target.dataset.model === 'phone') state.phone = e.target.value;
@@ -823,9 +809,9 @@
             const savedTheme = localStorage.getItem('velizman-theme') || 'dark';
             if (savedTheme === 'light') {
                 document.body.setAttribute('data-theme', 'light');
-                themeBtn.innerHTML = icons.moon; // Açık moddayken Ay (karanlık moda geçiş) ikonu göster
+                themeBtn.innerHTML = icons.moon; 
             } else {
-                themeBtn.innerHTML = icons.sun; // Koyu moddayken Güneş (aydınlık moda geçiş) ikonu göster
+                themeBtn.innerHTML = icons.sun; 
             }
         };
         initTheme();
@@ -853,7 +839,6 @@
                 if(timeEl) timeEl.innerText = now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
                 if(dateEl) dateEl.innerText = now.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
                 
-                // Tam dakika başlarında geçmiş saatleri gizlemek için arayüzü sessizce yenile (Eğer klavye odaklanmamışsa)
                 if (now.getSeconds() === 0 && state.view === 'customer' && state.bookingStatus === 'idle') {
                     const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
                     if (activeTag !== 'input' && activeTag !== 'select') {
@@ -863,8 +848,8 @@
                 }
             };
             
-            tick(); // İlk açılış
-            setInterval(tick, 1000); // Saniyede bir tıkla
+            tick();
+            setInterval(tick, 1000);
         };
         startLiveClock();
 
