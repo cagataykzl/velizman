@@ -1,174 +1,163 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Velizman Kuaförü</title>
-    <!-- Tailwind CSS (Kurulumsuz CDN versiyonu) -->
+    <title>Velizman Kuaförü - Randevu & Yönetim Sistemi</title>
+    <!-- Tailwind CSS (CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .fade-in { animation: fadeIn 0.4s ease-in-out; }
-        .zoom-in { animation: zoomIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes zoomIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        .fade-in { animation: fadeIn 0.35s ease-in-out; }
+        .zoom-in { animation: zoomIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes zoomIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
 
-        /* AÇIK TEMA (LIGHT) RENK PALETİ OVERRIDE */
+        /* AÇIK TEMA (LIGHT MODE) TANIMLARI */
         [data-theme="light"] {
-            --c-bg: #F8F9FA;          
-            --c-container: #FFFFFF;   
-            --c-el: #F3F4F6;          
-            --c-el-hover: #E5E7EB;    
-            --c-text-main: #111827;   
-            --c-text-sec: #374151;    
-            --c-text-muted: #6B7280;  
-            --c-text-faint: #9CA3AF;  
-            --c-border: #E5E7EB;      
-            --c-accent: #D97706;      
+            --c-bg: #F3F4F6;
+            --c-container: #FFFFFF;
+            --c-el: #F9FAFB;
+            --c-el-hover: #F3F4F6;
+            --c-text-main: #111827;
+            --c-text-sec: #374151;
+            --c-text-muted: #6B7280;
+            --c-border: #E5E7EB;
+            --c-accent: #D97706;
             --c-accent-hover: #B45309;
-            --c-accent-text: #FFFFFF; 
+            --c-accent-text: #FFFFFF;
         }
+
         body[data-theme="light"] { background-color: var(--c-bg) !important; color: var(--c-text-main) !important; }
-        [data-theme="light"] .bg-neutral-900 { background-color: var(--c-bg) !important; }
-        [data-theme="light"] .bg-neutral-950 { background-color: var(--c-container) !important; }
-        [data-theme="light"] .bg-neutral-950\/40 { background-color: rgba(255,255,255,0.4) !important; }
-        [data-theme="light"] .bg-neutral-950\/95 { background-color: rgba(255,255,255,0.95) !important; }
-        [data-theme="light"] .bg-neutral-800 { background-color: var(--c-el) !important; }
-        [data-theme="light"] .hover\:bg-neutral-700:hover { background-color: var(--c-el-hover) !important; }
-        
-        [data-theme="light"] .text-white, [data-theme="light"] .text-neutral-100 { color: var(--c-text-main) !important; }
-        [data-theme="light"] .text-neutral-300 { color: var(--c-text-sec) !important; }
-        [data-theme="light"] .text-neutral-400 { color: var(--c-text-muted) !important; }
-        [data-theme="light"] .text-neutral-500, [data-theme="light"] .text-neutral-600 { color: var(--c-text-faint) !important; }
-        
-        [data-theme="light"] .border-neutral-800 { border-color: var(--c-border) !important; }
+        [data-theme="light"] .bg-neutral-900 { background-color: #FFFFFF !important; }
+        [data-theme="light"] .bg-neutral-950 { background-color: #F9FAFB !important; }
+        [data-theme="light"] .bg-neutral-800 { background-color: #F3F4F6 !important; }
+        [data-theme="light"] .text-white, [data-theme="light"] .text-neutral-100 { color: #111827 !important; }
+        [data-theme="light"] .text-neutral-300 { color: #374151 !important; }
+        [data-theme="light"] .text-neutral-400 { color: #4B5563 !important; }
+        [data-theme="light"] .text-neutral-500 { color: #6B7280 !important; }
+        [data-theme="light"] .border-neutral-800 { border-color: #E5E7EB !important; }
         [data-theme="light"] .border-neutral-700 { border-color: #D1D5DB !important; }
-        [data-theme="light"] .hover\:border-neutral-700:hover { border-color: #D1D5DB !important; }
-        
-        [data-theme="light"] .text-amber-500, [data-theme="light"] .text-amber-400 { color: var(--c-accent) !important; }
-        [data-theme="light"] .bg-amber-500 { background-color: var(--c-accent) !important; color: var(--c-accent-text) !important; }
-        [data-theme="light"] .hover\:bg-amber-400:hover { background-color: var(--c-accent-hover) !important; }
-        [data-theme="light"] .border-amber-500 { border-color: var(--c-accent) !important; }
-        [data-theme="light"] .text-neutral-950 { color: var(--c-accent-text) !important; }
-        
-        [data-theme="light"] .border-amber-500\/20 { border-color: rgba(217, 119, 6, 0.2) !important; }
-        [data-theme="light"] .border-amber-500\/30 { border-color: rgba(217, 119, 6, 0.3) !important; }
-        [data-theme="light"] .bg-amber-500\/10 { background-color: rgba(217, 119, 6, 0.1) !important; }
-        [data-theme="light"] .bg-amber-500\/20 { background-color: rgba(217, 119, 6, 0.15) !important; }
-        [data-theme="light"] .shadow-amber-500\/20 { box-shadow: 0 10px 15px -3px rgba(217, 119, 6, 0.2), 0 4px 6px -4px rgba(217, 119, 6, 0.2) !important; }
-        
-        [data-theme="light"] .bg-green-500\/20 { background-color: rgba(34, 197, 94, 0.15) !important; }
-        [data-theme="light"] .text-green-400 { color: #15803d !important; }
-        [data-theme="light"] .bg-red-950\/20 { background-color: rgba(239, 68, 68, 0.05) !important; }
-        [data-theme="light"] .bg-red-950\/30 { background-color: rgba(239, 68, 68, 0.1) !important; }
-        [data-theme="light"] .bg-red-950\/40 { background-color: rgba(239, 68, 68, 0.15) !important; }
-        [data-theme="light"] .bg-red-950\/50 { background-color: rgba(239, 68, 68, 0.15) !important; }
-        [data-theme="light"] .border-red-900\/30 { border-color: rgba(239, 68, 68, 0.2) !important; }
-        [data-theme="light"] .text-red-500 { color: #dc2626 !important; }
-        [data-theme="light"] .text-red-400 { color: #b91c1c !important; }
-        
-        [data-theme="light"] input, [data-theme="light"] select { color: var(--c-text-main) !important; }
-        [data-theme="light"] input::placeholder { color: var(--c-text-faint) !important; }
+
+        /* TELEFON MOCKUP FRAME (REKLAM / VİDEO ÇEKİM MODU) */
+        .phone-frame {
+            border: 12px solid #1f2937;
+            border-radius: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            max-width: 420px;
+            margin: 20px auto;
+            position: relative;
+            overflow: hidden;
+        }
+        .phone-notch {
+            width: 130px;
+            height: 20px;
+            background-color: #1f2937;
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+            z-index: 50;
+        }
     </style>
 </head>
-<body class="bg-neutral-900 text-neutral-100 font-sans selection:bg-amber-500 selection:text-neutral-900">
+<body class="bg-neutral-900 text-neutral-100 font-sans selection:bg-amber-500 selection:text-neutral-900 min-h-screen flex flex-col justify-center items-center p-0 sm:p-4">
 
-    <div class="max-w-md mx-auto bg-neutral-950 min-h-screen shadow-2xl relative flex flex-col">
+    <!-- Üst Kontrol Çubuğu (Reklam Modu Toggle & Ekstra Araçlar) -->
+    <div class="w-full max-w-md mb-2 flex items-center justify-between px-3 text-xs text-neutral-400">
+        <button id="promo-frame-toggle" class="flex items-center gap-1.5 bg-neutral-800 hover:bg-neutral-700 text-amber-400 px-3 py-1.5 rounded-full border border-neutral-700 transition-all shadow-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><line x1="12" x2="12.01" y1="18" y2="18"/></svg>
+            <span id="promo-btn-text">📱 Reklam / Telefon Çerçevesi Aç</span>
+        </button>
+        <span class="opacity-60 text-[11px]">Velizman v2.0</span>
+    </div>
+
+    <!-- Ana Uygulama Çerçevesi -->
+    <div id="main-container" class="w-full max-w-md bg-neutral-950 min-h-screen sm:min-h-[820px] sm:rounded-3xl shadow-2xl relative flex flex-col overflow-hidden border border-neutral-800/60">
         
-        <!-- Sabit Başlık -->
-        <div class="bg-neutral-900 p-6 border-b border-amber-500/20 text-center relative z-10 shadow-lg">
-            <button id="theme-toggle" class="absolute top-6 right-6 w-9 h-9 flex items-center justify-center bg-neutral-800 rounded-full border border-neutral-700 text-amber-500 transition-colors z-20 hover:scale-110"></button>
+        <!-- Telefon Çentiği (Sadece Reklam Modunda Görünür) -->
+        <div id="phone-notch-el" class="phone-notch hidden"></div>
 
-            <div class="absolute top-5 left-6 flex flex-col items-start justify-center text-amber-500 transition-colors z-20">
-                <span id="live-time" class="text-xl font-bold font-mono tracking-widest leading-none" style="text-shadow: 0 0 10px rgba(217, 119, 6, 0.3);">--:--</span>
+        <div class="bg-neutral-900 p-5 border-b border-amber-500/20 text-center relative z-10 shadow-lg">
+            <!-- Tema Değiştirme Butonu -->
+            <button id="theme-toggle" class="absolute top-5 right-5 w-9 h-9 flex items-center justify-center bg-neutral-800 hover:bg-neutral-700 rounded-full border border-neutral-700 text-amber-500 transition-all hover:scale-105">
+                <svg id="theme-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+            </button>
+
+            <!-- Canlı Saat & Tarih -->
+            <div class="absolute top-4 left-5 flex flex-col items-start justify-center text-amber-500 transition-colors z-20">
+                <span id="live-time" class="text-lg font-bold font-mono tracking-widest leading-none">--:--</span>
                 <span id="live-date" class="text-[9px] uppercase tracking-widest opacity-70 mt-1">--</span>
             </div>
 
-            <div class="w-16 h-16 bg-neutral-800 rounded-full mx-auto flex items-center justify-center mb-3 border border-amber-500/30 text-amber-500">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+            <!-- Berber Makas Logosu -->
+            <div class="w-14 h-14 bg-neutral-800 rounded-full mx-auto flex items-center justify-center mb-2 border border-amber-500/30 text-amber-500 shadow-inner">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
             </div>
-            <h1 class="text-2xl font-bold tracking-wider text-amber-500">VELİZMAN</h1>
-            <p class="text-neutral-400 text-sm tracking-widest mt-1">Erkek Kuaförü</p>
-            <p class="text-neutral-500 text-xs mt-2 italic">Berber Coşkun Çulan</p>
+            <h1 class="text-2xl font-black tracking-widest text-amber-500 uppercase">VELİZMAN</h1>
+            <p class="text-neutral-400 text-xs tracking-widest font-medium mt-0.5">Erkek Kuaförü</p>
+            <p class="text-neutral-500 text-[11px] italic mt-1">Berber Coşkun Çulan</p>
             
             <!-- Dinamik Duyuru/Not Alanı -->
-            <div id="announcement-container" class="mt-3.5 hidden">
-                <span id="app-announcement" class="inline-block bg-amber-500/10 text-amber-500 border border-amber-500/20 text-xs font-semibold px-4 py-1.5 rounded-full tracking-wide shadow-sm max-w-[90%] truncate"></span>
+            <div id="announcement-container" class="mt-3 hidden">
+                <span id="app-announcement" class="inline-block bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-semibold px-4 py-1.5 rounded-full tracking-wide shadow-sm max-w-[95%] truncate"></span>
             </div>
         </div>
 
-        <!-- Uyarı Alanı (Config eksikse görünür) -->
-        <div id="config-warning" class="hidden bg-red-900/50 border-b border-red-500 p-4 text-center text-sm text-red-200">
-            ⚠️ <strong>Sistem Uyarısı:</strong> Firebase ayarları yapılmamış. Lütfen kod içindeki "API_KEY_BURAYA" kısımlarını kendi Firebase bilgilerinizle güncelleyin.
-        </div>
-
-        <!-- Dinamik İçerik Alanı -->
         <div id="app-content" class="flex-1 overflow-y-auto pb-20 fade-in"></div>
 
-        <!-- Footer / Yönetici Girişi -->
-        <div id="app-footer" class="p-4 text-center border-t border-neutral-800 bg-neutral-950 hidden">
-            <button data-action="set-view" data-view="admin_login" class="inline-flex items-center gap-2 text-xs text-neutral-600 hover:text-amber-500 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <!-- Footer / Yönetici Girişi Linki -->
+        <div id="app-footer" class="p-3 text-center border-t border-neutral-800 bg-neutral-950">
+            <button data-action="set-view" data-view="admin_login" class="inline-flex items-center gap-1.5 text-xs text-neutral-500 hover:text-amber-500 transition-colors py-1 px-3 rounded-full hover:bg-neutral-900">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 Yönetici Girişi
             </button>
         </div>
 
     </div>
 
-    <!-- Uygulama Mantığı (Vanilla JS) -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+        import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
         import { getFirestore, collection, onSnapshot, doc, setDoc, addDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
-        let firebaseConfig = {};
-        let isConfigMissing = false;
-
-        if (typeof __firebase_config !== 'undefined') {
-            firebaseConfig = JSON.parse(__firebase_config);
-        } else {
-            // GERÇEK FIREBASE BİLGİLERİN DOĞRUDAN ENTEGRE EDİLDİ:
-            firebaseConfig = {
-                apiKey: "AIzaSyB_spuG1O00pR6VOLS00bQr-zMs6UnnTAU",
-                authDomain: "velizman-app.firebaseapp.com",
-                projectId: "velizman-app",
-                storageBucket: "velizman-app.firebasestorage.app",
-                messagingSenderId: "996166116428",
-                appId: "1:996166116428:web:a07c132435e7567e9240e9"
-            };
-        }
-
-        if (firebaseConfig.apiKey === "API_KEY_BURAYA") {
-            isConfigMissing = true;
-            document.getElementById('config-warning').classList.remove('hidden');
-        }
-
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'velizman-app-id';
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        const icons = {
-            sun: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>`,
-            moon: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>`,
-            checkCircle: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
-            calendarCheck: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="m9 16 2 2 4-4"/></svg>`,
-            scissorsSmall: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>`,
-            user: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
-            phone: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`,
-            messageCircle: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg>`,
-            lock: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
-            chevronLeft: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>`,
-            wallet: `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>`,
-            trash2: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>`,
-            x: `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`,
-            calendar: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>`,
-            plus: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>`,
-            clock: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`
+        // Firebase Ayarları
+        const firebaseConfig = {
+            apiKey: "AIzaSyB_spuG1O00pR6VOLS00bQr-zMs6UnnTAU",
+            authDomain: "velizman-app.firebaseapp.com",
+            projectId: "velizman-app",
+            storageBucket: "velizman-app.firebasestorage.app",
+            messagingSenderId: "996166116428",
+            appId: "1:996166116428:web:a07c132435e7567e9240e9"
         };
 
-        // --- EN GÜNCEL ÖZEL BAŞLANGIÇ FİYATLARI VE YENİ SIRALANMIŞ HİZMETLER ---
+        const appId = 'velizman-app-id';
+        let app, auth, db;
+        
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+        } catch(e) {
+            console.warn("Firebase başlatılamadı, yerel modda çalışacak.", e);
+        }
+
+        const icons = {
+            checkCircle: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
+            calendarCheck: `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="m9 16 2 2 4-4"/></svg>`,
+            scissorsSmall: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>`,
+            user: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+            phone: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`,
+            whatsapp: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg>`,
+            trash2: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>`,
+            plus: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>`,
+            arrowLeft: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>`
+        };
+
         const DEFAULT_SERVICES = [
             { id: 'sac', label: 'Saç Tıraşı', price: 600, duration: 1 },
             { id: 'sakal', label: 'Sakal Tıraşı', price: 300, duration: 1 },
@@ -179,14 +168,32 @@
             { id: 'sac_sakal_yikama', label: 'Saç + Sakal + Yıkama', price: 900, duration: 2 }
         ];
 
-        // 09:00 - 20:00 (Kapanış 21:00 olduğu için son başlangıç saati 20:00)
+        const DAYS_TR = [
+            { id: 1, name: 'Pazartesi' },
+            { id: 2, name: 'Salı' },
+            { id: 3, name: 'Çarşamba' },
+            { id: 4, name: 'Perşembe' },
+            { id: 5, name: 'Cuma' },
+            { id: 6, name: 'Cumartesi' },
+            { id: 0, name: 'Pazar' }
+        ];
+
+        const DEFAULT_HOURS = {
+            1: { open: true, start: '09:00', end: '20:00' },
+            2: { open: true, start: '09:00', end: '20:00' },
+            3: { open: true, start: '09:00', end: '20:00' },
+            4: { open: true, start: '09:00', end: '20:00' },
+            5: { open: true, start: '09:00', end: '20:00' },
+            6: { open: true, start: '09:00', end: '20:00' },
+            0: { open: false, start: '09:00', end: '18:00' }
+        };
+
         const generateTimeSlots = () => {
             const slots = [];
-            for (let h = 9; h <= 19; h++) {
+            for (let h = 8; h <= 22; h++) {
                 slots.push(`${h.toString().padStart(2, '0')}:00`);
                 slots.push(`${h.toString().padStart(2, '0')}:30`);
             }
-            slots.push("20:00");
             return slots;
         };
         const ALL_TIME_SLOTS = generateTimeSlots();
@@ -196,7 +203,6 @@
             return new Date(d.getTime() - offset).toISOString().split('T')[0];
         };
 
-        // Takvimi 30 Gün (1 Ay) Olarak Ayarlama
         const getNext30Days = () => {
             const dates = [];
             for (let i = 0; i < 30; i++) {
@@ -217,77 +223,72 @@
         };
 
         const formatDateTR = (dateString) => new Date(dateString).toLocaleDateString('tr-TR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
-        const getMonday = (dStr) => {
-            const d = new Date(dStr);
-            const day = d.getDay();
-            return new Date(d.setDate(d.getDate() - day + (day === 0 ? -6 : 1))).toISOString().split('T')[0];
-        };
-        const isSameMonth = (d1, d2) => d1.substring(0, 7) === d2.substring(0, 7);
-        const isSameWeek = (d1, d2) => getMonday(d1) === getMonday(d2);
 
-        // --- STATE ---
         const state = {
             user: null,
             view: 'customer',
+            isPhoneFrame: false,
+            theme: 'dark',
             
-            // Global Veriler
+            // Berber / Personel Listesi ve Çalışma Saatleri
+            barbers: [
+                { id: 'barber_1', name: 'Coşkun Çulan', title: 'Başberber', hours: JSON.parse(JSON.stringify(DEFAULT_HOURS)) },
+                { id: 'barber_2', name: '2. Eleman / Usta', title: 'Erkek Kuaförü', hours: JSON.parse(JSON.stringify(DEFAULT_HOURS)) }
+            ],
+            selectedBarber: 'barber_1',
+
             services: [...DEFAULT_SERVICES],
             workingHours: {},
             appointments: [],
-            announcement: 'Velizman Erkek Kuaförü\'ne Hoş Geldiniz! ✂️', // Varsayılan Duyuru Yazısı (Görünür olması için)
+            announcement: 'Velizman Erkek Kuaförü\'ne Hoş Geldiniz! ✂️ Randevunuzu Saniyeler İçinde Alabilirsiniz.',
             
-            // Müşteri
             selectedDate: getNext30Days()[0],
             selectedTime: '',
-            selectedServices: [],
+            selectedServices: ['sac'],
             name: '',
             phone: '',
             bookingStatus: 'idle',
             errorMessage: '',
             lastBooked: null,
             
-            // Admin
             adminPassword: '',
             adminError: false,
-            adminTab: 'randevular', 
-            adminAppFilter: 'upcoming', 
-            
-            // Düzenleme Stateleri
-            adminServices: JSON.parse(JSON.stringify(DEFAULT_SERVICES)), 
-            adminWorkingHours: {},
-            adminAnnouncement: 'Velizman Erkek Kuaförü\'ne Hoş Geldiniz! ✂️', // Varsayılan Duyuru Yazısı (Admin için)
-            isSaving: false,
-            saveSuccess: false,
-            deletingId: null
+            adminTab: 'randevular',
+            adminSelectedBarberHours: 'barber_1',
+            adminServices: JSON.parse(JSON.stringify(DEFAULT_SERVICES)),
+            adminAnnouncement: '',
+            adminBarberFilter: 'all'
         };
 
-        const initFirebase = async () => {
-            if (isConfigMissing) return; 
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (error) { 
-                console.error("Firebase Auth Hatası:", error); 
-                state.errorMessage = "Bağlantı hatası: " + error.message; 
-                render();
+        const getBarberDaySchedule = (barberId, dateStr) => {
+            const d = new Date(dateStr);
+            const day = d.getDay(); // 0 = Pazar, 1 = Pazartesi...
+            const barber = state.barbers.find(b => b.id === barberId);
+            if (barber && barber.hours && barber.hours[day]) {
+                return barber.hours[day];
             }
+            return DEFAULT_HOURS[day] || { open: day !== 0, start: '09:00', end: '20:00' };
         };
 
-        if (!isConfigMissing) {
-            onAuthStateChanged(auth, (user) => {
-                state.user = user;
-                if (user) {
+        if (auth && db) {
+            signInAnonymously(auth).catch(e => console.log("Anon auth:", e));
+            onAuthStateChanged(auth, (u) => {
+                state.user = u;
+                if (u) {
                     onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general'), (docSnap) => {
                         if (docSnap.exists()) {
                             const data = docSnap.data();
                             state.services = data.services || DEFAULT_SERVICES;
                             state.workingHours = data.workingHours || {};
-                            state.announcement = data.announcement !== undefined ? data.announcement : 'Velizman Erkek Kuaförü\'ne Hoş Geldiniz! ✂️';
+                            if (data.announcement !== undefined) state.announcement = data.announcement;
+                            if (data.barbers && Array.isArray(data.barbers)) {
+                                state.barbers = data.barbers.map(b => ({
+                                    ...b,
+                                    hours: b.hours || JSON.parse(JSON.stringify(DEFAULT_HOURS))
+                                }));
+                            }
+                            
                             state.adminServices = JSON.parse(JSON.stringify(state.services));
-                            state.adminWorkingHours = JSON.parse(JSON.stringify(state.workingHours));
                             state.adminAnnouncement = state.announcement;
                         }
                         render();
@@ -302,116 +303,142 @@
                     });
                 }
             });
-            initFirebase();
         }
 
         const getRequiredSlots = (selectedIds) => {
-            if (selectedIds.length === 0) return 1;
+            if (!selectedIds || selectedIds.length === 0) return 1;
             let total = 0;
             selectedIds.forEach(id => {
                 const srv = state.services.find(s => s.id === id);
-                total += srv ? srv.duration : 1;
+                total += srv ? (srv.duration || 1) : 1;
             });
-            return total;
+            return total || 1;
         };
 
         function validateSelectedTime() {
             if (!state.selectedTime) return;
             const requiredSlots = getRequiredSlots(state.selectedServices);
-            const wh = state.workingHours[state.selectedDate] || { start: '09:00', end: '21:00' };
+            const schedule = getBarberDaySchedule(state.selectedBarber, state.selectedDate);
             
-            // Seçilen gün Pazar ise randevuyu temizle
-            const isSunday = new Date(state.selectedDate).getDay() === 0;
-            if (isSunday) {
+            if (!schedule.open) {
                 state.selectedTime = '';
                 return;
             }
 
             const bookedSlots = [];
-            state.appointments.filter(app => app.date === state.selectedDate).forEach(app => {
-                bookedSlots.push(app.time);
-                if (app.slots > 1) {
-                    let next = app.time;
-                    for(let i=1; i<app.slots; i++) {
-                        next = getNextSlot(next);
-                        bookedSlots.push(next);
+            state.appointments
+                .filter(app => app.date === state.selectedDate && (app.barberId === state.selectedBarber || (!app.barberId && state.selectedBarber === 'barber_1')))
+                .forEach(app => {
+                    bookedSlots.push(app.time);
+                    if (app.slots > 1) {
+                        let next = app.time;
+                        for(let i=1; i<app.slots; i++) {
+                            next = getNextSlot(next);
+                            bookedSlots.push(next);
+                        }
                     }
-                }
-            });
-
-            const now = new Date();
-            const todayStr = getLocalISO(now);
-            const currentMins = now.getHours() * 60 + now.getMinutes();
+                });
 
             let isValid = true;
             let checkTime = state.selectedTime;
             for(let i=0; i<requiredSlots; i++) {
-                const [h, m] = checkTime.split(':').map(Number);
-                // NOT: Bütün randevuları her zaman açık yapmak için zaman aşımı kontrolü (isPast) devre dışı bırakıldı.
-                const isPast = false;
-
-                if (checkTime < wh.start || checkTime >= wh.end || bookedSlots.includes(checkTime) || isPast) {
+                if (checkTime < schedule.start || checkTime >= schedule.end || bookedSlots.includes(checkTime)) {
                     isValid = false; break;
                 }
                 checkTime = getNextSlot(checkTime);
             }
-
             if (!isValid) state.selectedTime = '';
         }
 
-        // --- RENDERING ---
-        const contentDiv = document.getElementById('app-content');
-        const footerDiv = document.getElementById('app-footer');
-
+        // Ana Render Fonksiyonu
         function render() {
-            // Başlıktaki Dinamik Duyuru Güncellemesi
+            const contentEl = document.getElementById('app-content');
             const annContainer = document.getElementById('announcement-container');
-            const annEl = document.getElementById('app-announcement');
-            if (annContainer && annEl) {
-                if (state.announcement && state.announcement.trim() !== '') {
-                    annEl.innerText = state.announcement.trim();
+            const annText = document.getElementById('app-announcement');
+            const footerEl = document.getElementById('app-footer');
+
+            // Duyuru alanını güncelle
+            if (annContainer && annText) {
+                if (state.announcement) {
+                    annText.innerText = state.announcement;
                     annContainer.classList.remove('hidden');
                 } else {
                     annContainer.classList.add('hidden');
                 }
             }
 
-            footerDiv.style.display = (state.view === 'customer' && state.bookingStatus !== 'success') ? 'block' : 'none';
-            if (state.view === 'customer') contentDiv.innerHTML = state.bookingStatus === 'success' ? renderSuccess() : renderCustomer();
-            else if (state.view === 'admin_login') contentDiv.innerHTML = renderAdminLogin();
-            else if (state.view === 'admin_dashboard') contentDiv.innerHTML = renderAdminDashboard();
+            // Footer görünürlüğünü ayarla
+            if (footerEl) {
+                if (state.view === 'customer' && state.bookingStatus !== 'success') {
+                    footerEl.classList.remove('hidden');
+                } else {
+                    footerEl.classList.add('hidden');
+                }
+            }
+
+            if (!contentEl) return;
+
+            // Görünüm seçimine göre içeriği ekrana yaz
+            if (state.view === 'admin_login') {
+                contentEl.innerHTML = renderAdminLogin();
+            } else if (state.view === 'admin_dashboard') {
+                contentEl.innerHTML = renderAdminDashboard();
+            } else {
+                if (state.bookingStatus === 'success') {
+                    contentEl.innerHTML = renderSuccess();
+                } else {
+                    contentEl.innerHTML = renderCustomer();
+                }
+            }
         }
 
         function renderCustomer() {
             const requiredSlots = getRequiredSlots(state.selectedServices);
-            const wh = state.workingHours[state.selectedDate] || { start: '09:00', end: '21:00' };
-            
+            const schedule = getBarberDaySchedule(state.selectedBarber, state.selectedDate);
+
             const bookedSlots = [];
-            state.appointments.filter(app => app.date === state.selectedDate).forEach(app => {
-                bookedSlots.push(app.time);
-                if (app.slots > 1) {
-                    let next = app.time;
-                    for(let i=1; i<app.slots; i++) {
-                        next = getNextSlot(next);
-                        bookedSlots.push(next);
+            state.appointments
+                .filter(app => app.date === state.selectedDate && (app.barberId === state.selectedBarber || (!app.barberId && state.selectedBarber === 'barber_1')))
+                .forEach(app => {
+                    bookedSlots.push(app.time);
+                    if (app.slots > 1) {
+                        let next = app.time;
+                        for(let i=1; i<app.slots; i++) {
+                            next = getNextSlot(next);
+                            bookedSlots.push(next);
+                        }
                     }
-                }
-            });
+                });
+
+            // Berber seçimi HTML
+            const barbersHtml = state.barbers.map(b => {
+                const isSel = state.selectedBarber === b.id;
+                return `
+                <button data-action="select-barber" data-barber="${b.id}" 
+                    class="p-3 rounded-xl border transition-all text-left flex items-center gap-3 ${isSel ? 'bg-amber-500 text-neutral-950 border-amber-500 font-bold shadow-md shadow-amber-500/20' : 'bg-neutral-900 text-neutral-300 border-neutral-800 hover:border-amber-500/50'}">
+                    <div class="w-8 h-8 rounded-full ${isSel ? 'bg-neutral-950 text-amber-500' : 'bg-neutral-800 text-amber-500'} flex items-center justify-center font-bold text-xs flex-shrink-0">
+                        ${b.name.charAt(0)}
+                    </div>
+                    <div class="truncate">
+                        <div class="text-xs truncate font-bold">${b.name}</div>
+                        <div class="text-[10px] ${isSel ? 'text-neutral-900/80' : 'text-neutral-500'} truncate">${b.title || 'Kuaför'}</div>
+                    </div>
+                </button>`;
+            }).join('');
 
             const servicesHtml = state.services.map(service => {
                 const isSelected = state.selectedServices.includes(service.id);
-                const classes = isSelected ? 'bg-neutral-800 border-amber-500' : 'bg-neutral-900 border-neutral-800 hover:border-neutral-700';
-                const textClass = isSelected ? 'text-amber-400 font-medium' : 'text-neutral-300';
-                const priceClass = isSelected ? 'text-amber-400' : 'text-neutral-400';
+                const classes = isSelected ? 'bg-neutral-800/90 border-amber-500 shadow-sm' : 'bg-neutral-900 border-neutral-800 hover:border-neutral-700';
+                const textClass = isSelected ? 'text-amber-400 font-semibold' : 'text-neutral-300';
                 const iconHtml = isSelected ? `<span class="text-amber-500">${icons.checkCircle}</span>` : `<div class="w-5 h-5 rounded-full border-2 border-neutral-700 flex-shrink-0"></div>`;
                 
                 return `
                 <button data-action="toggle-service" data-service="${service.id}" class="w-full flex justify-between items-center py-3 px-4 mb-2 rounded-xl border transition-all text-left ${classes}">
                     <div class="flex items-center gap-3">
                         ${iconHtml}
-                        <span class="${textClass}">${service.label} ${service.duration > 1 ? '<span class="text-[10px] bg-amber-500/10 text-amber-500/80 px-2 py-0.5 rounded-full ml-1 whitespace-nowrap">1 Saat</span>' : ''}</span>
+                        <span class="${textClass} text-sm">${service.label} ${service.duration > 1 ? '<span class="text-[10px] bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-full ml-1">1 Saat</span>' : ''}</span>
                     </div>
-                    <span class="font-semibold ${priceClass} whitespace-nowrap ml-2">${service.price} ₺</span>
+                    <span class="font-bold ${isSelected ? 'text-amber-400' : 'text-neutral-400'} text-sm">${service.price} ₺</span>
                 </button>`;
             }).join('');
 
@@ -420,57 +447,47 @@
                 const dayName = d.toLocaleDateString('tr-TR', { weekday: 'short' });
                 const dayNum = d.getDate();
                 const isSelected = state.selectedDate === dateStr;
-                // Pazar günleri kapalı olması için kilit mekanizması tekrar aktif edildi
-                const isSunday = d.getDay() === 0; 
                 
-                const dayAppsCount = state.appointments.filter(app => app.date === dateStr).length;
-                const percentage = Math.min(dayAppsCount * 10, 100);
-                const isFull = dayAppsCount >= 15;
+                const daySchedule = getBarberDaySchedule(state.selectedBarber, dateStr);
+                const isClosed = !daySchedule.open;
+                
+                const dayAppsCount = state.appointments.filter(app => app.date === dateStr && (app.barberId === state.selectedBarber || (!app.barberId && state.selectedBarber === 'barber_1'))).length;
+                const isFull = dayAppsCount >= 16;
                 
                 let classes = '';
                 let disabledAttr = '';
-                let labelText = `%${percentage}`;
+                let labelText = isClosed ? 'KAPALI' : isFull ? 'DOLU' : `%${Math.min(dayAppsCount * 12, 100)}`;
 
-                if (isSunday) {
+                if (isClosed) {
                     classes = 'bg-red-950/20 text-red-500 border border-red-900/30 cursor-not-allowed opacity-60';
                     disabledAttr = 'disabled';
-                    labelText = 'KAPALI';
                 } else if (isSelected) {
-                    classes = 'bg-amber-500 text-neutral-950 font-bold shadow-lg shadow-amber-500/20';
+                    classes = 'bg-amber-500 text-neutral-950 font-bold shadow-lg shadow-amber-500/20 scale-105';
                 } else if (isFull) {
                     classes = 'bg-red-950/20 text-neutral-600 border border-red-900/30 cursor-not-allowed opacity-50';
                     disabledAttr = 'disabled';
-                    labelText = 'DOLU';
                 } else {
                     classes = 'bg-neutral-900 text-neutral-400 border border-neutral-800 hover:border-amber-500/50';
                 }
 
                 return `
                 <button data-action="select-date" data-date="${dateStr}" ${disabledAttr} 
-                    class="flex-shrink-0 min-w-[75px] py-3 rounded-xl flex flex-col items-center justify-center transition-all ${classes}">
-                    <span class="text-xs uppercase">${dayName}</span>
-                    <span class="text-xl my-0.5">${dayNum}</span>
-                    <span class="text-[9px] font-bold ${isSunday ? 'text-red-500' : isSelected ? 'text-neutral-900' : 'text-amber-500/70'}">${labelText}</span>
+                    class="flex-shrink-0 min-w-[70px] py-2.5 rounded-xl flex flex-col items-center justify-center transition-all ${classes}">
+                    <span class="text-[11px] uppercase tracking-wider">${dayName}</span>
+                    <span class="text-lg font-bold my-0.5">${dayNum}</span>
+                    <span class="text-[9px] font-bold ${isClosed ? 'text-red-500' : isSelected ? 'text-neutral-950' : 'text-amber-500/80'}">${labelText}</span>
                 </button>`;
             }).join('');
 
-            const now = new Date();
-            const todayStr = getLocalISO(now);
-            const currentMins = now.getHours() * 60 + now.getMinutes();
-
-            const timesHtml = ALL_TIME_SLOTS.map(time => {
+            const timesHtml = ALL_TIME_SLOTS.filter(t => t >= schedule.start && t < schedule.end).map(time => {
                 let isBooked = false;
                 let checkTime = time;
                 
-                if (time < wh.start || time >= wh.end) {
-                    isBooked = true; // Mesai dışı
+                if (!schedule.open) {
+                    isBooked = true;
                 } else {
                     for(let i=0; i<requiredSlots; i++) {
-                        const [ch, cm] = checkTime.split(':').map(Number);
-                        // NOT: Zaman aşımı kontrolü (isCheckPast) devre dışı bırakılarak geçmiş saatlerin de seçilebilmesi sağlandı.
-                        const isCheckPast = false;
-
-                        if (checkTime >= wh.end || bookedSlots.includes(checkTime) || isCheckPast) {
+                        if (checkTime >= schedule.end || bookedSlots.includes(checkTime)) {
                             isBooked = true; break;
                         }
                         checkTime = getNextSlot(checkTime);
@@ -479,453 +496,532 @@
 
                 const isSelected = state.selectedTime === time;
                 let classes = isBooked 
-                    ? 'bg-neutral-950/40 text-neutral-600 border border-neutral-900/30 cursor-not-allowed opacity-50'
+                    ? 'bg-neutral-950/40 text-neutral-600 border border-neutral-900/40 cursor-not-allowed opacity-40'
                     : isSelected
-                        ? 'bg-amber-500 text-neutral-950 font-bold'
+                        ? 'bg-amber-500 text-neutral-950 font-bold shadow-md shadow-amber-500/20 scale-105'
                         : 'bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-amber-500/50';
 
                 return `<button data-action="select-time" data-time="${time}" ${isBooked ? 'disabled' : ''} 
-                    class="py-2 text-sm rounded-lg transition-all ${classes}">${time}</button>`;
+                    class="py-2.5 text-xs rounded-lg font-mono font-medium transition-all ${classes}">${time}</button>`;
             }).join('');
 
+            const totalPrice = state.selectedServices.reduce((sum, id) => {
+                const s = state.services.find(x => x.id === id);
+                return sum + (s ? s.price : 0);
+            }, 0);
+
             return `
-            <div class="p-4 space-y-8 pb-12 fade-in">
+            <div class="p-4 space-y-6 fade-in">
                 
-                <section class="space-y-3">
-                    <div class="flex items-center justify-between px-1">
-                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
-                            <span class="text-amber-500">${icons.scissorsSmall}</span> İşlemler
-                        </h2>
-                        ${requiredSlots > 1 ? `<span class="text-[10px] bg-amber-500/20 text-amber-500 px-2 py-1 rounded-full font-medium animate-pulse">Uzun İşlem (${requiredSlots * 30} Dk)</span>` : ''}
-                    </div>
-                    <div class="flex flex-col gap-1">${servicesHtml}</div>
-                </section>
-
-                <section class="space-y-5">
-                    <h2 class="text-xl font-bold text-white flex items-center gap-2 px-1">
-                        <span class="text-amber-500">${icons.calendarCheck}</span> Randevu Al
+                <!-- 1. BERBER SEÇİMİ -->
+                <section class="space-y-2">
+                    <h2 class="text-base font-bold text-white flex items-center gap-2 px-1">
+                        <span class="text-amber-500">${icons.user}</span> 1. Berber / Usta Seçin
                     </h2>
-
-                    <div class="space-y-2">
-                        <label class="text-sm text-neutral-400 px-1">Tarih Seçin (1 Aylık Takvim)</label>
-                        <div class="flex overflow-x-auto gap-2 pb-2 hide-scrollbar">${datesHtml}</div>
-                    </div>
-
-                    <div class="space-y-2">
-                        <label class="text-sm text-neutral-400 px-1 flex justify-between items-center">
-                            Saat Seçin 
-                            <span class="text-[10px] text-neutral-500">Açık: ${wh.start} - ${wh.end}</span>
-                        </label>
-                        <div class="grid grid-cols-4 gap-2">${timesHtml}</div>
-                    </div>
-
-                    <div class="space-y-3 pt-2">
-                        <div class="relative">
-                            <span class="text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2">${icons.user}</span>
-                            <input type="text" data-model="name" placeholder="Adınız Soyadınız" value="${state.name}"
-                                class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-amber-500" />
-                        </div>
-                        <div class="relative">
-                            <span class="text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2">${icons.phone}</span>
-                            <input type="tel" data-model="phone" placeholder="Telefon Numaranız" value="${state.phone}"
-                                class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-amber-500" />
-                        </div>
-                    </div>
-
-                    ${state.errorMessage ? `<div class="p-3 bg-red-950/50 border border-red-900/50 rounded-xl text-red-400 text-sm text-center">${state.errorMessage}</div>` : ''}
-
-                    <button data-action="book" ${state.bookingStatus === 'loading' ? 'disabled' : ''}
-                        class="w-full bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold text-lg py-4 rounded-xl shadow-lg shadow-amber-500/20 transition-all mt-4 flex justify-center gap-2">
-                        ${state.bookingStatus === 'loading' ? '<span class="animate-pulse">İşleniyor...</span>' : `Randevuyu Tamamla ${icons.checkCircle}`}
-                    </button>
+                    <div class="grid grid-cols-2 gap-2">${barbersHtml}</div>
                 </section>
+
+                <!-- 2. HİZMET SEÇİMİ -->
+                <section class="space-y-2">
+                    <div class="flex items-center justify-between px-1">
+                        <h2 class="text-base font-bold text-white flex items-center gap-2">
+                            <span class="text-amber-500">${icons.scissorsSmall}</span> 2. İşlem Seçin
+                        </h2>
+                        ${requiredSlots > 1 ? `<span class="text-[10px] bg-amber-500/20 text-amber-400 px-2.5 py-0.5 rounded-full font-semibold border border-amber-500/30">Tahmini ${requiredSlots * 30} Dk</span>` : ''}
+                    </div>
+                    <div class="flex flex-col">${servicesHtml}</div>
+                </section>
+
+                <!-- 3. TARİH SEÇİMİ -->
+                <section class="space-y-2">
+                    <h2 class="text-base font-bold text-white flex items-center gap-2 px-1">
+                        <span class="text-amber-500">${icons.calendarCheck}</span> 3. Tarih Seçin
+                    </h2>
+                    <div class="flex overflow-x-auto gap-2 py-1 px-1 hide-scrollbar">${datesHtml}</div>
+                </section>
+
+                <!-- 4. SAAT SEÇİMİ -->
+                <section class="space-y-2">
+                    <div class="flex justify-between items-center px-1">
+                        <h2 class="text-base font-bold text-white flex items-center gap-2">
+                            <span class="text-amber-500">⏰</span> 4. Müsait Saat
+                        </h2>
+                        <span class="text-xs text-neutral-400 font-mono">${formatDateTR(state.selectedDate)}</span>
+                    </div>
+                    ${!schedule.open ? `<div class="bg-red-500/10 border border-red-500/20 text-red-400 text-xs p-3 rounded-xl text-center">Seçilen berber bu tarihte çalışmamaktadır / izinlidir.</div>` : `<div class="grid grid-cols-4 gap-2 pt-1">${timesHtml}</div>`}
+                </section>
+
+                <!-- 5. MÜŞTERİ BİLGİLERİ -->
+                <section class="space-y-3 pt-2 border-t border-neutral-800">
+                    <h2 class="text-base font-bold text-white px-1">5. Bilgileriniz</h2>
+                    
+                    <div class="space-y-2">
+                        <div class="relative">
+                            <span class="absolute left-3.5 top-3 text-neutral-500">${icons.user}</span>
+                            <input type="text" id="cust-name" value="${state.name}" placeholder="Adınız Soyadınız" 
+                                class="w-full bg-neutral-900 border border-neutral-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-neutral-100 placeholder-neutral-500 focus:border-amber-500 focus:outline-none transition-colors">
+                        </div>
+                        <div class="relative">
+                            <span class="absolute left-3.5 top-3 text-neutral-500">${icons.phone}</span>
+                            <input type="tel" id="cust-phone" value="${state.phone}" placeholder="Telefon Numaranız (05xx...)" 
+                                class="w-full bg-neutral-900 border border-neutral-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-neutral-100 placeholder-neutral-500 focus:border-amber-500 focus:outline-none transition-colors">
+                        </div>
+                    </div>
+                </section>
+
+                ${state.errorMessage ? `<div class="bg-red-500/10 border border-red-500/30 text-red-400 text-xs p-3 rounded-xl text-center">${state.errorMessage}</div>` : ''}
+
+                <!-- TOPLAM ÖZETİ VE RANDEVU AL BUTONU -->
+                <div class="bg-neutral-900 p-4 rounded-2xl border border-amber-500/20 space-y-3">
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-neutral-400">Toplam Tutar:</span>
+                        <span class="text-xl font-bold text-amber-500">${totalPrice} ₺</span>
+                    </div>
+                    <button data-action="submit-booking" ${!state.selectedTime || state.selectedServices.length === 0 ? 'disabled' : ''} 
+                        class="w-full bg-amber-500 hover:bg-amber-400 disabled:bg-neutral-800 disabled:text-neutral-600 text-neutral-950 font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-amber-500/20 active:scale-95 flex justify-center items-center gap-2">
+                        <span>Randevumu Onayla</span>
+                    </button>
+                </div>
+
             </div>`;
         }
 
         function renderSuccess() {
-            const b = state.lastBooked || state;
+            const app = state.lastBooked || {};
             return `
-            <div class="p-8 text-center flex flex-col items-center justify-center min-h-[60vh] space-y-6 zoom-in">
-                <div class="w-20 h-20 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <div class="p-6 text-center space-y-6 zoom-in my-auto">
+                <div class="w-20 h-20 bg-green-500/10 border-2 border-green-500 rounded-full flex items-center justify-center mx-auto text-green-500 shadow-lg shadow-green-500/20">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                 </div>
-                <h2 class="text-2xl font-bold text-amber-500 mb-2">Randevunuz Alındı!</h2>
-                <p class="text-neutral-300">${formatDateTR(b.date || b.selectedDate)} saat ${b.time || b.selectedTime}</p>
-                <div class="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 w-full">
-                    <p class="text-amber-500 text-sm font-medium">Randevunuzun onaylanması için aşağıdaki butonu kullanarak bize WhatsApp'tan mesaj göndermeyi unutmayın.</p>
+
+                <div class="space-y-1">
+                    <h2 class="text-2xl font-bold text-white">Randevunuz Hazır!</h2>
+                    <p class="text-sm text-neutral-400">Tebrikler Sayın <strong class="text-amber-400">${app.name}</strong>,</p>
                 </div>
-                <div class="w-full space-y-3 pt-4 border-t border-neutral-800">
-                    <button data-action="open-wp" class="w-full bg-green-600 hover:bg-green-500 text-white font-medium py-3 rounded-xl flex items-center justify-center gap-2">
-                        ${icons.messageCircle} WhatsApp'tan Bildir
+
+                <div class="bg-neutral-900 border border-neutral-800 p-4 rounded-2xl space-y-2 text-left text-sm">
+                    <div class="flex justify-between border-b border-neutral-800 pb-2">
+                        <span class="text-neutral-400">Seçilen Usta:</span>
+                        <span class="font-bold text-amber-400">${app.barberName || 'Coşkun Usta'}</span>
+                    </div>
+                    <div class="flex justify-between border-b border-neutral-800 pb-2">
+                        <span class="text-neutral-400">Tarih:</span>
+                        <span class="font-bold text-white">${formatDateTR(app.date)}</span>
+                    </div>
+                    <div class="flex justify-between border-b border-neutral-800 pb-2">
+                        <span class="text-neutral-400">Saat:</span>
+                        <span class="font-bold text-amber-500 font-mono text-base">${app.time}</span>
+                    </div>
+                    <div class="flex justify-between border-b border-neutral-800 pb-2">
+                        <span class="text-neutral-400">İşlemler:</span>
+                        <span class="font-medium text-neutral-200 text-right">${app.servicesText}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-neutral-400">Tutar:</span>
+                        <span class="font-bold text-amber-400">${app.totalPrice} ₺</span>
+                    </div>
+                </div>
+
+                <p class="text-xs text-neutral-400">Randevu detaylarınızı berbere iletmek için aşağıdaki düğmeye basıp WhatsApp mesajı gönderebilirsiniz.</p>
+
+                <div class="space-y-2 pt-2">
+                    <button data-action="send-whatsapp" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-600/20">
+                        ${icons.whatsapp} WhatsApp İle Mesaj At
                     </button>
-                    <button data-action="reset-form" class="w-full bg-neutral-800 hover:bg-neutral-700 text-white font-medium py-3 rounded-xl">Yeni Randevu</button>
+                    <button data-action="new-booking" class="w-full bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-medium py-3 rounded-xl transition-colors text-xs">
+                        Yeni Randevu Al
+                    </button>
                 </div>
             </div>`;
         }
 
         function renderAdminLogin() {
             return `
-            <div class="p-8 flex flex-col items-center justify-center min-h-[70vh] fade-in">
-                <div class="w-16 h-16 bg-neutral-900 rounded-full flex items-center justify-center mb-6 border border-neutral-800 text-neutral-400">
-                    ${icons.lock}
+            <div class="p-6 space-y-6 fade-in max-w-sm mx-auto">
+                <button data-action="set-view" data-view="customer" class="flex items-center gap-1.5 text-xs text-neutral-400 hover:text-white transition-colors">
+                    ${icons.arrowLeft} Müşteri Ekranına Dön
+                </button>
+
+                <div class="text-center space-y-1">
+                    <h2 class="text-xl font-bold text-white">Yönetici Paneli Girişi</h2>
+                    <p class="text-xs text-neutral-400">Lütfen kuaför şifrenizi girin</p>
                 </div>
-                <h2 class="text-xl font-bold mb-2">Yönetici Paneli</h2>
-                <p class="text-neutral-500 text-sm mb-8 text-center">Randevuları ve sistemi yönetin.</p>
-                
-                <div class="w-full space-y-4">
-                    <input type="password" data-model="adminPassword" placeholder="Şifre" value="${state.adminPassword}"
-                        class="w-full bg-neutral-900 border ${state.adminError ? 'border-red-500' : 'border-neutral-800'} rounded-xl py-3 px-4 text-center text-white focus:outline-none focus:border-amber-500" />
-                    ${state.adminError ? `<p class="text-red-400 text-xs text-center">Hatalı şifre.</p>` : ''}
-                    
-                    <button data-action="login" class="w-full bg-neutral-800 hover:bg-neutral-700 text-white font-medium py-3 rounded-xl">Giriş Yap</button>
-                    <button data-action="set-view" data-view="customer" class="w-full text-neutral-500 text-sm py-2 hover:text-white">Geri Dön</button>
+
+                <div class="space-y-4">
+                    <input type="password" id="admin-pass" placeholder="Şifreniz (Varsayılan: 1234)" 
+                        class="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-3 text-sm text-center text-white focus:border-amber-500 focus:outline-none font-mono">
+
+                    ${state.adminError ? `<p class="text-xs text-red-500 text-center">⚠️ Hatalı şifre girdiğiniz için giriş yapamadınız!</p>` : ''}
+
+                    <button data-action="admin-login" class="w-full bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold py-3 rounded-xl transition-all">
+                        Giriş Yap
+                    </button>
                 </div>
             </div>`;
         }
 
         function renderAdminDashboard() {
-            const getPrice = (sId) => state.services.find(s=>s.id === sId)?.price || 0;
-            const getLabel = (sId) => state.services.find(s=>s.id === sId)?.label || sId;
+            const upcomingApps = state.appointments
+                .filter(a => a.date >= getLocalISO(new Date()))
+                .sort((a,b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
 
-            // --- TAB 1: RANDEVULAR ---
-            const todayStr = getLocalISO(new Date());
-            
-            let dTotal = 0, wTotal = 0, mTotal = 0;
-            state.appointments.forEach(app => {
-                const appPrice = app.totalPrice || app.services.reduce((sum, sId) => sum + getPrice(sId), 0);
-                if (app.date === todayStr) dTotal += appPrice;
-                if (isSameWeek(app.date, todayStr)) wTotal += appPrice;
-                if (isSameMonth(app.date, todayStr)) mTotal += appPrice;
-            });
-
-            let filteredApps = [];
-            if (state.adminAppFilter === 'upcoming') {
-                filteredApps = state.appointments.filter(app => app.date >= todayStr).sort((a, b) => {
-                    if (a.date !== b.date) return a.date.localeCompare(b.date);
-                    return a.time.localeCompare(b.time);
-                });
-            } else {
-                filteredApps = state.appointments.filter(app => app.date < todayStr).sort((a, b) => {
-                    if (a.date !== b.date) return b.date.localeCompare(a.date); 
-                    return b.time.localeCompare(a.time); 
-                });
-            }
-
-            let appointmentsHtml = '';
-            if (filteredApps.length === 0) {
-                appointmentsHtml = `
-                <div class="text-center py-10 bg-neutral-900/50 rounded-xl border border-neutral-800/50 border-dashed text-neutral-600 mt-4">
-                    <div class="flex justify-center mb-2">${icons.calendar}</div><p class="text-sm">Kayıtlı randevu bulunmuyor.</p>
-                </div>`;
-            } else {
-                let currentGroupDate = '';
-                filteredApps.forEach(app => {
-                    if (app.date !== currentGroupDate) {
-                        currentGroupDate = app.date;
-                        let dateLabel = app.date === todayStr ? 'Bugün' : formatDateTR(app.date);
-                        appointmentsHtml += `<div class="sticky top-0 bg-neutral-950/95 backdrop-blur-sm py-2 z-10 mt-6 mb-2 border-b border-neutral-800 text-amber-500 font-bold text-sm flex items-center gap-2">${icons.calendarCheck} ${dateLabel}</div>`;
-                    }
-
-                    const srvHtml = app.services.map(sId => `<span class="bg-neutral-950 text-neutral-300 border border-neutral-800 text-[10px] px-2 py-1 rounded-md">${getLabel(sId)}</span>`).join('');
-                    const appPrice = app.totalPrice || app.services.reduce((sum, sId) => sum + getPrice(sId), 0);
-                    let actionHtml = state.deletingId === app.id ? `
-                        <div class="flex gap-1 bg-red-950/80 rounded-md p-1 border border-red-900">
-                            <button data-action="confirm-delete" data-id="${app.id}" class="text-[10px] text-white bg-red-600 px-2 py-1 rounded">Onayla</button>
-                            <button data-action="cancel-delete" class="text-neutral-300 p-1">${icons.x}</button>
-                        </div>` : `<button data-action="prompt-delete" data-id="${app.id}" class="text-neutral-500 hover:text-red-400 bg-neutral-950 p-1.5 rounded-md border border-neutral-800">${icons.trash2}</button>`;
-
-                    appointmentsHtml += `
-                    <div class="bg-neutral-900 border-l-4 border-amber-500 rounded-r-xl p-4 shadow-sm relative overflow-hidden mb-3">
-                        <div class="absolute top-0 right-0 bg-neutral-800 text-amber-500 text-xs font-bold px-3 py-1 rounded-bl-lg">
-                            ${app.time} ${app.slots === 2 ? '<span class="text-[10px] opacity-75">(1s)</span>' : ''}
-                        </div>
-                        <h3 class="font-bold text-lg text-white mb-1 pr-16">${app.name}</h3>
-                        <div class="flex items-center gap-2 text-neutral-400 text-sm mb-3">
-                            ${icons.phone} <a href="tel:${app.phone}" class="hover:text-amber-500 underline underline-offset-4">${app.phone}</a>
-                        </div>
-                        <div class="flex flex-wrap gap-1.5">${srvHtml}</div>
-                        <div class="mt-3 pt-3 border-t border-neutral-800 flex justify-between items-center">
-                            <span class="text-xs text-neutral-500 flex items-center gap-1">${icons.wallet} Kazanç</span>
-                            <div class="flex items-center gap-3"><span class="text-sm font-bold text-amber-500">${appPrice} ₺</span>${actionHtml}</div>
-                        </div>
-                    </div>`;
-                });
-            }
-
-            // --- TAB 2: HİZMETLER ---
-            const adminServicesHtml = state.adminServices.map((srv, index) => `
-                <div class="bg-neutral-900 p-3 rounded-xl border border-neutral-800 space-y-3">
-                    <div class="flex gap-2">
-                        <input type="text" data-action="update-srv-label" data-index="${index}" value="${srv.label}" class="flex-1 bg-neutral-950 border border-neutral-700 rounded-lg py-1.5 px-3 text-sm text-white focus:border-amber-500" placeholder="Hizmet Adı">
-                        <button data-action="remove-srv" data-index="${index}" class="text-red-400 bg-red-950/30 p-2 rounded-lg border border-red-900/30">${icons.trash2}</button>
-                    </div>
-                    <div class="flex gap-2">
-                        <div class="flex-1 flex items-center bg-neutral-950 border border-neutral-700 rounded-lg px-2">
-                            <input type="number" data-action="update-srv-price" data-index="${index}" value="${srv.price}" class="w-full bg-transparent py-1.5 text-sm text-white focus:outline-none" placeholder="Fiyat">
-                            <span class="text-neutral-500 text-sm">₺</span>
-                        </div>
-                        <select data-action="update-srv-duration" data-index="${index}" class="bg-neutral-950 border border-neutral-700 rounded-lg py-1.5 px-2 text-sm text-neutral-300 focus:border-amber-500">
-                            <option value="1" ${srv.duration === 1 ? 'selected' : ''}>30 Dk</option>
-                            <option value="2" ${srv.duration === 2 ? 'selected' : ''}>1 Saat</option>
-                        </select>
-                    </div>
-                </div>
-            `).join('');
-
-            // --- TAB 3: ÇALIŞMA SAATLERİ (30 GÜN - SCROLL EDİLEBİLİR ALAN) ---
-            const scheduleHtml = getNext30Days().map(dateStr => {
-                const d = new Date(dateStr);
-                // Pazar günleri kapalı izinli olacak şekilde kontrol mekanizması aktifleştirildi
-                const isSunday = d.getDay() === 0; 
-                const wh = state.adminWorkingHours[dateStr] || { start: '09:00', end: '21:00' };
-                const dayName = d.toLocaleDateString('tr-TR', { weekday: 'short', day: 'numeric', month: 'short' });
-                
-                if (isSunday) {
+            const listHtml = upcomingApps.length === 0 
+                ? `<div class="text-center py-8 text-neutral-500 text-xs">Kayıtlı randevu bulunmuyor.</div>`
+                : upcomingApps.map(app => {
+                    const barber = state.barbers.find(b => b.id === app.barberId) || { name: app.barberName || 'Coşkun Usta' };
                     return `
-                    <div class="bg-red-950/10 p-3 rounded-xl border border-red-900/20 flex justify-between items-center opacity-70">
-                        <span class="text-sm font-medium text-red-400 w-24">${dayName}</span>
-                        <span class="text-xs text-red-500 font-bold bg-red-950/30 px-3 py-1 rounded-full uppercase">Haftalık İzin (Kapalı)</span>
+                    <div class="bg-neutral-900 border border-neutral-800 p-3.5 rounded-xl space-y-2 relative">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-bold text-amber-400">${app.name || 'İsimsiz'}</span>
+                                    <span class="text-[9px] bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-full border border-amber-500/20 font-semibold">${barber.name}</span>
+                                </div>
+                                <p class="text-[11px] text-neutral-400 mt-0.5">${app.phone || 'Telefon Yok'}</p>
+                            </div>
+                            <button data-action="delete-app" data-id="${app.id}" class="text-neutral-500 hover:text-red-400 p-1">
+                                ${icons.trash2}
+                            </button>
+                        </div>
+                        <div class="flex justify-between items-center text-xs text-neutral-300 pt-1 border-t border-neutral-800">
+                            <span class="font-mono text-neutral-400">${app.date} | <strong class="text-amber-500">${app.time}</strong></span>
+                            <span class="font-bold text-white">${app.totalPrice || 0} ₺</span>
+                        </div>
+                        <p class="text-[11px] text-neutral-400">${app.servicesText || ''}</p>
                     </div>`;
-                }
+                }).join('');
 
+            // Seçili Berberin Çalışma Saatleri HTML
+            const currentBarberForHours = state.barbers.find(b => b.id === state.adminSelectedBarberHours) || state.barbers[0];
+            const barberHoursMap = currentBarberForHours.hours || DEFAULT_HOURS;
+
+            const timeOptionsHtml = (selected) => {
+                return ALL_TIME_SLOTS.map(t => `<option value="${t}" ${t === selected ? 'selected' : ''}>${t}</option>`).join('');
+            };
+
+            const hoursListHtml = DAYS_TR.map(day => {
+                const hData = barberHoursMap[day.id] || { open: day.id !== 0, start: '09:00', end: '20:00' };
                 return `
-                <div class="bg-neutral-900 p-3 rounded-xl border border-neutral-800 flex justify-between items-center">
-                    <span class="text-sm font-medium text-amber-500 w-24">${dayName}</span>
-                    <div class="flex items-center gap-2">
-                        <input type="time" data-action="update-wh-start" data-date="${dateStr}" value="${wh.start}" class="bg-neutral-950 border border-neutral-700 rounded-md p-1 text-sm text-white">
-                        <span class="text-neutral-600">-</span>
-                        <input type="time" data-action="update-wh-end" data-date="${dateStr}" value="${wh.end}" class="bg-neutral-950 border border-neutral-700 rounded-md p-1 text-sm text-white">
+                <div class="bg-neutral-900 border border-neutral-800 p-3 rounded-xl flex flex-col gap-2.5">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-bold text-white flex items-center gap-1.5">
+                            📅 ${day.name}
+                        </span>
+                        <label class="inline-flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="hour-open-${day.id}" ${hData.open ? 'checked' : ''} class="sr-only peer">
+                            <div class="w-9 h-5 bg-neutral-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500 relative"></div>
+                            <span class="text-[11px] font-semibold text-neutral-400 peer-checked:text-amber-400">${hData.open ? 'Çalışıyor' : 'İzinli / Kapalı'}</span>
+                        </label>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 pt-1 border-t border-neutral-800/60">
+                        <div>
+                            <label class="text-[10px] text-neutral-400 block mb-1">Başlangıç Saati</label>
+                            <select id="hour-start-${day.id}" class="w-full bg-neutral-950 border border-neutral-800 text-amber-400 font-mono text-xs rounded-lg p-2 focus:border-amber-500 focus:outline-none">
+                                ${timeOptionsHtml(hData.start)}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-neutral-400 block mb-1">Bitiş Saati (Son Mesai)</label>
+                            <select id="hour-end-${day.id}" class="w-full bg-neutral-950 border border-neutral-800 text-amber-400 font-mono text-xs rounded-lg p-2 focus:border-amber-500 focus:outline-none">
+                                ${timeOptionsHtml(hData.end)}
+                            </select>
+                        </div>
                     </div>
                 </div>`;
             }).join('');
 
-            const tabBtnClass = (tab) => `px-3 py-1.5 text-[11px] font-medium rounded-md transition-colors ${state.adminTab === tab ? 'bg-neutral-800 text-white' : 'text-neutral-500'}`;
-
             return `
-            <div class="flex flex-col h-full fade-in">
-                <div class="bg-neutral-900 border-b border-neutral-800 p-4 sticky top-0 z-20 space-y-3">
-                    <div class="flex items-center gap-3">
-                        <button data-action="set-view" data-view="customer" class="w-8 h-8 flex justify-center items-center bg-neutral-800 rounded-full text-neutral-400 hover:text-white">${icons.chevronLeft}</button>
-                        <span class="font-bold text-amber-500">Yönetim Paneli</span>
-                    </div>
-                    <div class="flex bg-neutral-950 p-1 rounded-lg border border-neutral-800">
-                        <button data-action="set-admin-tab" data-tab="randevular" class="flex-1 ${tabBtnClass('randevular')}">Randevular</button>
-                        <button data-action="set-admin-tab" data-tab="hizmetler" class="flex-1 ${tabBtnClass('hizmetler')}">Hizmetler</button>
-                        <button data-action="set-admin-tab" data-tab="saatler" class="flex-1 ${tabBtnClass('saatler')}">Saatler</button>
-                    </div>
+            <div class="p-4 space-y-5 fade-in">
+                <div class="flex justify-between items-center pb-2 border-b border-neutral-800">
+                    <h2 class="text-base font-bold text-white">Kuaför Yönetimi</h2>
+                    <button data-action="set-view" data-view="customer" class="text-xs bg-neutral-800 text-neutral-300 px-3 py-1.5 rounded-lg">Çıkış</button>
                 </div>
 
-                <div class="p-4 pb-12">
-                    ${state.adminTab === 'randevular' ? `
+                <!-- Tab Seçenekleri -->
+                <div class="flex border-b border-neutral-800 text-xs font-semibold overflow-x-auto hide-scrollbar">
+                    <button data-action="admin-tab" data-tab="randevular" class="flex-1 py-2 px-2 text-center border-b-2 whitespace-nowrap ${state.adminTab === 'randevular' ? 'border-amber-500 text-amber-500' : 'border-transparent text-neutral-500'}">Randevular (${upcomingApps.length})</button>
+                    <button data-action="admin-tab" data-tab="saatler" class="flex-1 py-2 px-2 text-center border-b-2 whitespace-nowrap ${state.adminTab === 'saatler' ? 'border-amber-500 text-amber-500' : 'border-transparent text-neutral-500'}">⏰ Çalışma Saatleri</button>
+                    <button data-action="admin-tab" data-tab="personel" class="flex-1 py-2 px-2 text-center border-b-2 whitespace-nowrap ${state.adminTab === 'personel' ? 'border-amber-500 text-amber-500' : 'border-transparent text-neutral-500'}">Personel</button>
+                    <button data-action="admin-tab" data-tab="duyuru" class="flex-1 py-2 px-2 text-center border-b-2 whitespace-nowrap ${state.adminTab === 'duyuru' ? 'border-amber-500 text-amber-500' : 'border-transparent text-neutral-500'}">Duyuru</button>
+                </div>
+
+                ${state.adminTab === 'randevular' ? `
+                    <div class="space-y-3">${listHtml}</div>
+                ` : state.adminTab === 'saatler' ? `
                     <div class="space-y-4">
-                        <div class="grid grid-cols-3 gap-2 text-center">
-                            <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-2"><p class="text-[10px] text-neutral-500 uppercase">Bugün</p><p class="text-sm font-bold text-amber-500">${dTotal} ₺</p></div>
-                            <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-2"><p class="text-[10px] text-neutral-500 uppercase">Bu Hafta</p><p class="text-sm font-bold text-amber-500">${wTotal} ₺</p></div>
-                            <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-2"><p class="text-[10px] text-neutral-500 uppercase">Bu Ay</p><p class="text-sm font-bold text-amber-500">${mTotal} ₺</p></div>
-                        </div>
+                        <p class="text-xs text-neutral-400">Çalışma saatlerini ve izin günlerini düzenlemek istediğiniz berberi seçin:</p>
                         
-                        <div class="flex bg-neutral-900 p-1 rounded-lg border border-neutral-800">
-                            <button data-action="set-app-filter" data-filter="upcoming" class="flex-1 px-3 py-2 text-xs font-medium rounded-md transition-colors ${state.adminAppFilter === 'upcoming' ? 'bg-neutral-800 text-amber-500' : 'text-neutral-500'}">Gelecek Randevular</button>
-                            <button data-action="set-app-filter" data-filter="past" class="flex-1 px-3 py-2 text-xs font-medium rounded-md transition-colors ${state.adminAppFilter === 'past' ? 'bg-neutral-800 text-amber-500' : 'text-neutral-500'}">Geçmiş Randevular</button>
-                        </div>
-                        
-                        <div>${appointmentsHtml}</div>
-                    </div>` : state.adminTab === 'hizmetler' ? `
-                    <div class="space-y-4">
-                        <!-- YENİ: Dinamik Duyuru Düzenleme Girişi -->
-                        <div class="bg-neutral-900 p-4 rounded-xl border border-neutral-800 space-y-2">
-                            <label class="text-xs text-amber-500 font-bold flex items-center gap-1.5 uppercase tracking-wide">
-                                📢 Günün Duyurusu / Başlık Altı Notu:
-                            </label>
-                            <input type="text" data-action="update-announcement" value="${state.adminAnnouncement || ''}" 
-                                class="w-full bg-neutral-950 border border-neutral-700 rounded-xl py-2.5 px-3.5 text-sm text-white focus:outline-none focus:border-amber-500 transition-all" 
-                                placeholder="Örn: Hayırlı Cumalar / İyi Bayramlar... (Boş bırakırsanız gizlenir)" />
+                        <!-- Berber Seçim Butonları -->
+                        <div class="grid grid-cols-2 gap-2">
+                            ${state.barbers.map(b => `
+                                <button data-action="select-admin-barber-hours" data-barber="${b.id}" class="py-2 px-3 rounded-xl text-xs font-bold transition-all border ${state.adminSelectedBarberHours === b.id ? 'bg-amber-500 text-neutral-950 border-amber-500 shadow-md' : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:border-amber-500/40'}">
+                                    ${b.name}
+                                </button>
+                            `).join('')}
                         </div>
 
-                        <button data-action="add-srv" class="w-full bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 text-amber-500 py-3 rounded-xl flex items-center justify-center gap-2 text-sm">
-                            ${icons.plus} Yeni Hizmet Ekle
-                        </button>
-                        <div class="space-y-3">${adminServicesHtml}</div>
-                        <button data-action="save-settings" ${state.isSaving ? 'disabled' : ''} class="w-full py-4 rounded-xl font-bold transition-all ${state.saveSuccess ? 'bg-green-600 text-white' : 'bg-amber-500 text-neutral-950'}">
-                            ${state.isSaving ? 'Kaydediliyor...' : state.saveSuccess ? 'Başarıyla Kaydedildi!' : 'Değişiklikleri Kaydet'}
-                        </button>
-                    </div>` : `
-                    <div class="space-y-4">
-                        <p class="text-xs text-neutral-400 bg-neutral-900 p-3 rounded-xl border border-neutral-800">
-                            Önümüzdeki 1 ay (30 gün) için mesai saatlerini ayarlayın. Çalışma saatlerini dilediğiniz gibi özelleştirebilirsiniz.
-                        </p>
-                        <div class="space-y-2 max-h-[400px] overflow-y-auto pr-1 hide-scrollbar">
-                            ${scheduleHtml}
+                        <div class="space-y-2.5">
+                            ${hoursListHtml}
                         </div>
-                        <button data-action="save-settings" ${state.isSaving ? 'disabled' : ''} class="w-full py-4 rounded-xl font-bold transition-all ${state.saveSuccess ? 'bg-green-600 text-white' : 'bg-amber-500 text-neutral-950'}">
-                            ${state.isSaving ? 'Kaydediliyor...' : state.saveSuccess ? 'Başarıyla Kaydedildi!' : 'Saatleri Kaydet'}
+
+                        <button data-action="save-hours" class="w-full bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold py-3 rounded-xl text-xs transition-all shadow-md shadow-amber-500/20">
+                            ${currentBarberForHours.name} Çalışma Saatlerini Kaydet
                         </button>
-                    </div>`}
-                </div>
+                    </div>
+                ` : state.adminTab === 'personel' ? `
+                    <div class="space-y-4">
+                        <p class="text-xs text-neutral-400">Kuaförde çalışan eleman veya ustaların isimlerini düzenleyebilirsiniz:</p>
+                        
+                        <div class="bg-neutral-900 p-3.5 rounded-xl border border-neutral-800 space-y-3">
+                            <span class="text-xs font-bold text-amber-400 block">1. Berber / Usta</span>
+                            <input type="text" id="barber-1-name" value="${state.barbers[0]?.name || ''}" placeholder="1. Berber Adı" class="w-full bg-neutral-950 border border-neutral-800 rounded-lg p-2.5 text-xs text-white focus:border-amber-500 focus:outline-none">
+                            <input type="text" id="barber-1-title" value="${state.barbers[0]?.title || ''}" placeholder="Unvan (örn: Başberber)" class="w-full bg-neutral-950 border border-neutral-800 rounded-lg p-2.5 text-xs text-neutral-300 focus:border-amber-500 focus:outline-none">
+                        </div>
+
+                        <div class="bg-neutral-900 p-3.5 rounded-xl border border-neutral-800 space-y-3">
+                            <span class="text-xs font-bold text-amber-400 block">2. Berber / Usta (Değişken)</span>
+                            <input type="text" id="barber-2-name" value="${state.barbers[1]?.name || ''}" placeholder="2. Eleman / Berber Adı" class="w-full bg-neutral-950 border border-neutral-800 rounded-lg p-2.5 text-xs text-white focus:border-amber-500 focus:outline-none">
+                            <input type="text" id="barber-2-title" value="${state.barbers[1]?.title || ''}" placeholder="Unvan (örn: Kuaför)" class="w-full bg-neutral-950 border border-neutral-800 rounded-lg p-2.5 text-xs text-neutral-300 focus:border-amber-500 focus:outline-none">
+                        </div>
+
+                        <button data-action="save-barbers" class="w-full bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold py-2.5 rounded-xl text-xs transition-all shadow-md">
+                            Personel Bilgilerini Kaydet
+                        </button>
+                    </div>
+                ` : `
+                    <div class="space-y-3">
+                        <label class="text-xs text-neutral-400">Üst Kısımda Görünecek Duyuru Mesajı:</label>
+                        <textarea id="admin-ann-text" rows="3" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl p-3 text-xs text-white focus:border-amber-500 focus:outline-none">${state.adminAnnouncement}</textarea>
+                        <button data-action="save-announcement" class="w-full bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold py-2.5 rounded-xl text-xs">Duyuruyu Kaydet</button>
+                    </div>
+                `}
             </div>`;
         }
 
-        // --- ACTIONS ---
         document.addEventListener('click', async (e) => {
             const btn = e.target.closest('[data-action]');
             if (!btn) return;
             const action = btn.dataset.action;
 
-            if (action === 'set-view') {
-                state.view = btn.dataset.view;
-                if(state.view === 'customer') { state.adminPassword = ''; state.adminError = false; }
+            if (action === 'select-barber') {
+                state.selectedBarber = btn.dataset.barber;
+                validateSelectedTime();
                 render();
-            } else if (action === 'select-date') {
-                if(btn.hasAttribute('disabled')) return;
+            }
+            else if (action === 'select-admin-barber-hours') {
+                state.adminSelectedBarberHours = btn.dataset.barber;
+                render();
+            }
+            else if (action === 'save-hours') {
+                const barberIndex = state.barbers.findIndex(b => b.id === state.adminSelectedBarberHours);
+                if (barberIndex !== -1) {
+                    const newHours = {};
+                    DAYS_TR.forEach(day => {
+                        const openEl = document.getElementById(`hour-open-${day.id}`);
+                        const startEl = document.getElementById(`hour-start-${day.id}`);
+                        const endEl = document.getElementById(`hour-end-${day.id}`);
+
+                        newHours[day.id] = {
+                            open: openEl ? openEl.checked : false,
+                            start: startEl ? startEl.value : '09:00',
+                            end: endEl ? endEl.value : '20:00'
+                        };
+                    });
+
+                    state.barbers[barberIndex].hours = newHours;
+
+                    if (db) {
+                        setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general'), {
+                            barbers: state.barbers
+                        }, { merge: true });
+                    }
+                    validateSelectedTime();
+                    render();
+                }
+            }
+            else if (action === 'toggle-service') {
+                const sId = btn.dataset.service;
+                if (state.selectedServices.includes(sId)) {
+                    state.selectedServices = state.selectedServices.filter(id => id !== sId);
+                } else {
+                    state.selectedServices.push(sId);
+                }
+                validateSelectedTime();
+                render();
+            }
+            else if (action === 'select-date') {
                 state.selectedDate = btn.dataset.date;
-                state.selectedTime = '';
-                validateSelectedTime(); render();
-            } else if (action === 'select-time') {
-                if (btn.hasAttribute('disabled')) return;
-                state.selectedTime = btn.dataset.time; render();
-            } else if (action === 'toggle-service') {
-                const sid = btn.dataset.service;
-                if (state.selectedServices.includes(sid)) state.selectedServices = state.selectedServices.filter(id => id !== sid);
-                else state.selectedServices.push(sid);
-                validateSelectedTime(); render();
-            } else if (action === 'book') {
-                if (!state.selectedTime || state.selectedServices.length === 0 || !state.name.trim() || !state.phone.trim()) {
-                    state.errorMessage = "Lütfen eksiksiz doldurun."; render(); return;
+                validateSelectedTime();
+                render();
+            }
+            else if (action === 'select-time') {
+                state.selectedTime = btn.dataset.time;
+                render();
+            }
+            else if (action === 'submit-booking') {
+                const nameEl = document.getElementById('cust-name');
+                const phoneEl = document.getElementById('cust-phone');
+                state.name = nameEl ? nameEl.value.trim() : '';
+                state.phone = phoneEl ? phoneEl.value.trim() : '';
+
+                if (!state.name || !state.phone) {
+                    state.errorMessage = "Lütfen adınızı ve telefon numaranızı girin!";
+                    render();
+                    return;
                 }
-                if (isConfigMissing) {
-                    state.errorMessage = "Firebase ayarları eksik. Lütfen veritabanı kurulumunu tamamlayın."; render(); return;
-                }
-                
-                state.lastBooked = {
-                    date: state.selectedDate, time: state.selectedTime, services: [...state.selectedServices], name: state.name, phone: state.phone
+
+                state.errorMessage = '';
+                const reqSlots = getRequiredSlots(state.selectedServices);
+                const totalPrice = state.selectedServices.reduce((sum, id) => {
+                    const s = state.services.find(x => x.id === id);
+                    return sum + (s ? s.price : 0);
+                }, 0);
+                const srvTexts = state.selectedServices.map(id => {
+                    const s = state.services.find(x => x.id === id);
+                    return s ? s.label : '';
+                }).join(', ');
+
+                const currentBarber = state.barbers.find(b => b.id === state.selectedBarber) || state.barbers[0];
+
+                const newApp = {
+                    barberId: state.selectedBarber,
+                    barberName: currentBarber ? currentBarber.name : 'Coşkun Usta',
+                    date: state.selectedDate,
+                    time: state.selectedTime,
+                    slots: reqSlots,
+                    services: state.selectedServices,
+                    servicesText: srvTexts,
+                    totalPrice: totalPrice,
+                    name: state.name,
+                    phone: state.phone,
+                    createdAt: new Date().toISOString()
                 };
-                
-                state.bookingStatus = 'loading'; state.errorMessage = ''; render();
-                try {
-                    const reqSlots = getRequiredSlots(state.selectedServices);
-                    const totalPrice = state.selectedServices.reduce((sum, sId) => sum + (state.services.find(s=>s.id===sId)?.price || 0), 0);
-                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'appointments'), {
-                        date: state.selectedDate, time: state.selectedTime, slots: reqSlots, services: state.selectedServices,
-                        totalPrice: totalPrice, name: state.name.trim(), phone: state.phone.trim(), createdAt: new Date().toISOString()
-                    });
-                    state.bookingStatus = 'success';
-                } catch (error) { state.errorMessage = "Hata: " + error.message; state.bookingStatus = 'idle'; }
-                render();
-            } else if (action === 'reset-form') {
-                state.selectedTime = ''; state.selectedServices = []; state.name = ''; state.phone = ''; state.bookingStatus = 'idle'; state.lastBooked = null; render();
-            } else if (action === 'open-wp') {
-                const b = state.lastBooked || state;
-                const srvs = b.services || b.selectedServices;
-                const srvNames = srvs.map(id => state.services.find(s=>s.id===id)?.label).join(', ');
-                const msg = `Merhaba Coşkun Bey, \n\n*${formatDateTR(b.date || b.selectedDate)}* tarihi, saat *${b.time || b.selectedTime}* için *${srvNames}* randevusu oluşturdum.\n\nİsim Soyisim: ${b.name}\nTelefon Numaram: ${b.phone}`;
-                window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
-            } else if (action === 'login') {
-                if (state.adminPassword === '01051992') { state.view = 'admin_dashboard'; state.adminError = false; } 
-                else { state.adminError = true; state.adminPassword = ''; }
-                render();
-            } else if (action === 'set-admin-tab') {
-                state.adminTab = btn.dataset.tab; render();
-            } else if (action === 'set-app-filter') { 
-                state.adminAppFilter = btn.dataset.filter; render();
-            } else if (action === 'prompt-delete') {
-                state.deletingId = btn.dataset.id; render();
-            } else if (action === 'cancel-delete') {
-                state.deletingId = null; render();
-            } else if (action === 'confirm-delete') {
-                if (isConfigMissing) return;
-                try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'appointments', btn.dataset.id)); state.deletingId = null; render(); } catch(e){}
-            } else if (action === 'add-srv') {
-                state.adminServices.push({ id: 'srv_' + Date.now(), label: '', price: 0, duration: 1 }); render();
-            } else if (action === 'remove-srv') {
-                state.adminServices.splice(btn.dataset.index, 1); render();
-            } else if (action === 'save-settings') {
-                if (isConfigMissing) {
-                    alert("Firebase ayarları yapılmamış. Değişiklikler kaydedilemez."); return;
+
+                if (db) {
+                    try {
+                        const ref = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'appointments'), newApp);
+                        newApp.id = ref.id;
+                    } catch(err) {
+                        console.error("Kayıt hatası:", err);
+                    }
                 }
-                state.isSaving = true; render();
-                try {
-                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general'), {
-                        services: state.adminServices,
-                        workingHours: state.adminWorkingHours,
-                        announcement: state.adminAnnouncement || '', // DUYURU VERİSİNİN KAYDEDİLMESİ
-                        lastUpdated: new Date().toISOString()
-                    });
-                    state.saveSuccess = true;
-                    setTimeout(() => { state.saveSuccess = false; render(); }, 3000);
-                } catch(e) { alert("Hata: " + e.message); }
-                state.isSaving = false; render();
+
+                state.lastBooked = newApp;
+                state.bookingStatus = 'success';
+                render();
+            }
+            else if (action === 'send-whatsapp') {
+                const app = state.lastBooked;
+                if (!app) return;
+                const msg = `Merhaba! Velizman Kuaför'den randevu aldım:\n\n👤 Müşteri: ${app.name}\n✂️ Berber: ${app.barberName || 'Coşkun Usta'}\n📅 Tarih: ${formatDateTR(app.date)}\n⏰ Saat: ${app.time}\n💈 İşlemler: ${app.servicesText}\n💵 Tutar: ${app.totalPrice} ₺`;
+                const url = `https://wa.me/905555555555?text=${encodeURIComponent(msg)}`;
+                window.open(url, '_blank');
+            }
+            else if (action === 'save-barbers') {
+                const b1Name = document.getElementById('barber-1-name')?.value.trim() || 'Coşkun Çulan';
+                const b1Title = document.getElementById('barber-1-title')?.value.trim() || 'Başberber';
+                const b2Name = document.getElementById('barber-2-name')?.value.trim() || '2. Eleman';
+                const b2Title = document.getElementById('barber-2-title')?.value.trim() || 'Kuaför';
+
+                state.barbers[0] = { ...state.barbers[0], name: b1Name, title: b1Title };
+                state.barbers[1] = { ...state.barbers[1], name: b2Name, title: b2Title };
+
+                if (db) {
+                    setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general'), {
+                        services: state.services,
+                        workingHours: state.workingHours,
+                        announcement: state.announcement,
+                        barbers: state.barbers
+                    }, { merge: true });
+                }
+                render();
+            }
+            else if (action === 'delete-app') {
+                const id = btn.dataset.id;
+                if (db && id) {
+                    deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'appointments', id));
+                }
+            }
+            else if (action === 'set-view') {
+                state.view = btn.dataset.view;
+                if (state.view === 'customer') {
+                    state.adminError = false;
+                }
+                render();
+            }
+            else if (action === 'admin-login') {
+                const passEl = document.getElementById('admin-pass');
+                const pass = passEl ? passEl.value : '';
+                if (pass === '1234') {
+                    state.view = 'admin_dashboard';
+                    state.adminError = false;
+                } else {
+                    state.adminError = true;
+                }
+                render();
+            }
+            else if (action === 'admin-tab') {
+                state.adminTab = btn.dataset.tab;
+                render();
+            }
+            else if (action === 'new-booking') {
+                state.bookingStatus = 'idle';
+                state.selectedTime = '';
+                state.lastBooked = null;
+                state.view = 'customer';
+                render();
+            }
+            else if (action === 'save-announcement') {
+                const annEl = document.getElementById('admin-ann-text');
+                if (annEl) {
+                    state.announcement = annEl.value.trim();
+                    state.adminAnnouncement = state.announcement;
+                    if (db) {
+                        setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general'), {
+                            announcement: state.announcement
+                        }, { merge: true });
+                    }
+                }
+                render();
             }
         });
 
-        // Event Delegation for Inputs
-        document.addEventListener('input', (e) => {
-            if (e.target.dataset.model === 'name') state.name = e.target.value;
-            if (e.target.dataset.model === 'phone') state.phone = e.target.value;
-            if (e.target.dataset.model === 'adminPassword') { state.adminPassword = e.target.value; state.adminError = false; }
-            
-            // Duyuru girdisinin anlık yakalanması
-            if (e.target.dataset.action === 'update-announcement') state.adminAnnouncement = e.target.value;
+        // Promo Frame Toggle Listener
+        document.getElementById('promo-frame-toggle').addEventListener('click', () => {
+            state.isPhoneFrame = !state.isPhoneFrame;
+            const container = document.getElementById('main-container');
+            const notch = document.getElementById('phone-notch-el');
+            const btnText = document.getElementById('promo-btn-text');
 
-            // Admin Services Live Update
-            if (e.target.dataset.action === 'update-srv-label') state.adminServices[e.target.dataset.index].label = e.target.value;
-            if (e.target.dataset.action === 'update-srv-price') state.adminServices[e.target.dataset.index].price = Number(e.target.value) || 0;
-            if (e.target.dataset.action === 'update-wh-start') {
-                const dateStr = e.target.dataset.date;
-                if(!state.adminWorkingHours[dateStr]) state.adminWorkingHours[dateStr] = { end: '21:00' };
-                state.adminWorkingHours[dateStr].start = e.target.value;
-            }
-            if (e.target.dataset.action === 'update-wh-end') {
-                const dateStr = e.target.dataset.date;
-                if(!state.adminWorkingHours[dateStr]) state.adminWorkingHours[dateStr] = { start: '09:00' };
-                state.adminWorkingHours[dateStr].end = e.target.value;
-            }
-        });
-
-        document.addEventListener('change', (e) => {
-            if (e.target.dataset.action === 'update-srv-duration') {
-                state.adminServices[e.target.dataset.index].duration = Number(e.target.value);
-            }
-        });
-
-        document.addEventListener('keypress', (e) => {
-            if(e.key === 'Enter' && state.view === 'admin_login' && e.target.dataset.model === 'adminPassword') {
-                document.querySelector('[data-action="login"]').click();
-            }
-        });
-
-        // --- TEMA VE SAAT YÖNETİMİ ---
-        const themeBtn = document.getElementById('theme-toggle');
-        const initTheme = () => {
-            const savedTheme = localStorage.getItem('velizman-theme') || 'dark';
-            if (savedTheme === 'light') { document.body.setAttribute('data-theme', 'light'); themeBtn.innerHTML = icons.moon; } 
-            else { themeBtn.innerHTML = icons.sun; }
-        };
-        initTheme();
-
-        themeBtn.addEventListener('click', () => {
-            const isLight = document.body.getAttribute('data-theme') === 'light';
-            if (isLight) {
-                document.body.removeAttribute('data-theme'); localStorage.setItem('velizman-theme', 'dark'); themeBtn.innerHTML = icons.sun;
+            if (state.isPhoneFrame) {
+                container.classList.add('phone-frame');
+                notch.classList.remove('hidden');
+                btnText.innerText = '💻 Tam Ekran Görünümüne Geç';
             } else {
-                document.body.setAttribute('data-theme', 'light'); localStorage.setItem('velizman-theme', 'light'); themeBtn.innerHTML = icons.moon;
+                container.classList.remove('phone-frame');
+                notch.classList.add('hidden');
+                btnText.innerText = '📱 Reklam / Telefon Çerçevesi Aç';
             }
         });
 
-        const startLiveClock = () => {
-            const timeEl = document.getElementById('live-time');
-            const dateEl = document.getElementById('live-date');
-            const tick = () => {
-                const now = new Date();
-                if(timeEl) timeEl.innerText = now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
-                if(dateEl) dateEl.innerText = now.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
-                if (now.getSeconds() === 0 && state.bookingStatus === 'idle') {
-                    const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
-                    if (activeTag !== 'input') { validateSelectedTime(); render(); }
-                }
-            };
-            tick(); setInterval(tick, 1000);
-        };
-        startLiveClock();
+        // Theme Toggle Listener
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+            state.theme = state.theme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', state.theme);
+        });
+
+        // Live Time Updater
+        setInterval(() => {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+            const dateStr = now.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
+            const liveTimeEl = document.getElementById('live-time');
+            const liveDateEl = document.getElementById('live-date');
+            if (liveTimeEl) liveTimeEl.innerText = timeStr;
+            if (liveDateEl) liveDateEl.innerText = dateStr;
+        }, 1000);
+
+        // Initial Render
         render();
     </script>
 </body>
