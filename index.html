@@ -258,9 +258,14 @@
             adminTab: 'randevular',
             adminSelectedBarberHours: 'barber_1',
             adminServices: JSON.parse(JSON.stringify(DEFAULT_SERVICES)),
+            adminBarbers: [
+                { id: 'barber_1', name: 'Coşkun Çulan', title: 'Başberber', hours: JSON.parse(JSON.stringify(DEFAULT_HOURS)) },
+                { id: 'barber_2', name: '2. Eleman / Usta', title: 'Erkek Kuaförü', hours: JSON.parse(JSON.stringify(DEFAULT_HOURS)) }
+            ],
             adminAnnouncement: '',
             adminBarberFilter: 'all',
-            priceSaveSuccess: false
+            priceSaveSuccess: false,
+            barberSaveSuccess: false
         };
 
         const getBarberDaySchedule = (barberId, dateStr) => {
@@ -305,6 +310,7 @@
                             }
                             
                             state.adminServices = JSON.parse(JSON.stringify(state.services));
+                            state.adminBarbers = JSON.parse(JSON.stringify(state.barbers));
                             state.adminAnnouncement = state.announcement;
                         }
                         render();
@@ -810,7 +816,7 @@
                         <p class="text-xs text-neutral-400">Çalışma saatlerini ve izin günlerini düzenlemek istediğiniz berberi seçin:</p>
                         
                         <!-- Berber Seçim Butonları -->
-                        <div class="grid grid-cols-2 gap-2">
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
                             ${state.barbers.map(b => `
                                 <button data-action="select-admin-barber-hours" data-barber="${b.id}" class="py-2 px-3 rounded-xl text-xs font-bold transition-all border ${state.adminSelectedBarberHours === b.id ? 'bg-amber-500 text-neutral-950 border-amber-500 shadow-md' : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:border-amber-500/40'}">
                                     ${b.name}
@@ -823,26 +829,50 @@
                         </div>
 
                         <button data-action="save-hours" class="w-full bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold py-3 rounded-xl text-xs transition-all shadow-md shadow-amber-500/20">
-                            ${currentBarberForHours.name} Çalışma Saatlerini Kaydet
+                            ${currentBarberForHours ? currentBarberForHours.name : 'Seçili Personel'} Çalışma Saatlerini Kaydet
                         </button>
                     </div>
                 ` : state.adminTab === 'personel' ? `
                     <div class="space-y-4">
-                        <p class="text-xs text-neutral-400">Kuaförde çalışan eleman veya ustaların isimlerini düzenleyebilirsiniz:</p>
+                        <div class="flex justify-between items-center px-1">
+                            <p class="text-xs text-neutral-400">Ekip üyelerini yönetin (3., 4. veya yeni eleman ekleyin):</p>
+                            <button data-action="add-admin-barber" class="flex items-center gap-1 bg-neutral-900 hover:bg-neutral-800 text-amber-400 text-xs px-2.5 py-1.5 rounded-lg border border-neutral-700 transition-colors">
+                                ${icons.plus} Yeni Personel Ekle
+                            </button>
+                        </div>
                         
-                        <div class="bg-neutral-900 p-3.5 rounded-xl border border-neutral-800 space-y-3">
-                            <span class="text-xs font-bold text-amber-400 block">1. Berber / Usta</span>
-                            <input type="text" id="barber-1-name" value="${state.barbers[0]?.name || ''}" placeholder="1. Berber Adı" class="w-full bg-neutral-950 border border-neutral-800 rounded-lg p-2.5 text-xs text-white focus:border-amber-500 focus:outline-none">
-                            <input type="text" id="barber-1-title" value="${state.barbers[0]?.title || ''}" placeholder="Unvan (örn: Başberber)" class="w-full bg-neutral-950 border border-neutral-800 rounded-lg p-2.5 text-xs text-neutral-300 focus:border-amber-500 focus:outline-none">
+                        <div class="space-y-3 max-h-[380px] overflow-y-auto pr-1 hide-scrollbar">
+                            ${state.adminBarbers.map((barber, idx) => `
+                                <div class="bg-neutral-900 p-3.5 rounded-xl border border-neutral-800 space-y-2.5">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+                                            ✂️ ${idx + 1}. Personel / Usta
+                                        </span>
+                                        ${state.adminBarbers.length > 1 ? `
+                                            <button data-action="delete-admin-barber" data-index="${idx}" class="text-neutral-500 hover:text-red-400 p-1 rounded hover:bg-neutral-950 transition-colors" title="Personeli Sil">
+                                                ${icons.trash2}
+                                            </button>
+                                        ` : ''}
+                                    </div>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        <div>
+                                            <label class="text-[10px] text-neutral-400 block mb-1">Ad Soyad</label>
+                                            <input type="text" data-action="edit-barber-name" data-index="${idx}" value="${barber.name || ''}" placeholder="Personel Adı" 
+                                                class="w-full bg-neutral-950 border border-neutral-800 rounded-lg p-2 text-xs text-white focus:border-amber-500 focus:outline-none">
+                                        </div>
+                                        <div>
+                                            <label class="text-[10px] text-neutral-400 block mb-1">Unvan</label>
+                                            <input type="text" data-action="edit-barber-title" data-index="${idx}" value="${barber.title || ''}" placeholder="Örn: Kuaför, Kalfa, Çırak" 
+                                                class="w-full bg-neutral-950 border border-neutral-800 rounded-lg p-2 text-xs text-neutral-300 focus:border-amber-500 focus:outline-none">
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
                         </div>
 
-                        <div class="bg-neutral-900 p-3.5 rounded-xl border border-neutral-800 space-y-3">
-                            <span class="text-xs font-bold text-amber-400 block">2. Berber / Usta (Değişken)</span>
-                            <input type="text" id="barber-2-name" value="${state.barbers[1]?.name || ''}" placeholder="2. Eleman / Berber Adı" class="w-full bg-neutral-950 border border-neutral-800 rounded-lg p-2.5 text-xs text-white focus:border-amber-500 focus:outline-none">
-                            <input type="text" id="barber-2-title" value="${state.barbers[1]?.title || ''}" placeholder="Unvan (örn: Kuaför)" class="w-full bg-neutral-950 border border-neutral-800 rounded-lg p-2.5 text-xs text-neutral-300 focus:border-amber-500 focus:outline-none">
-                        </div>
+                        ${state.barberSaveSuccess ? `<div class="bg-green-500/10 border border-green-500/30 text-green-400 text-xs p-2.5 rounded-xl text-center font-bold">✅ Personel listesi başarıyla kaydedildi!</div>` : ''}
 
-                        <button data-action="save-barbers" class="w-full bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold py-2.5 rounded-xl text-xs transition-all shadow-md">
+                        <button data-action="save-barbers" class="w-full bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold py-3 rounded-xl text-xs transition-all shadow-md shadow-amber-500/20">
                             Personel Bilgilerini Kaydet
                         </button>
                     </div>
@@ -975,14 +1005,33 @@
                 const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
                 window.open(url, '_blank');
             }
+            else if (action === 'add-admin-barber') {
+                const count = state.adminBarbers.length + 1;
+                state.adminBarbers.push({
+                    id: 'barber_' + Date.now(),
+                    name: `${count}. Berber / Usta`,
+                    title: 'Erkek Kuaförü',
+                    hours: JSON.parse(JSON.stringify(DEFAULT_HOURS))
+                });
+                render();
+            }
+            else if (action === 'delete-admin-barber') {
+                const idx = parseInt(btn.dataset.index);
+                if (!isNaN(idx) && state.adminBarbers.length > 1) {
+                    state.adminBarbers.splice(idx, 1);
+                    render();
+                }
+            }
             else if (action === 'save-barbers') {
-                const b1Name = document.getElementById('barber-1-name')?.value.trim() || 'Coşkun Çulan';
-                const b1Title = document.getElementById('barber-1-title')?.value.trim() || 'Başberber';
-                const b2Name = document.getElementById('barber-2-name')?.value.trim() || '2. Eleman';
-                const b2Title = document.getElementById('barber-2-title')?.value.trim() || 'Kuaför';
+                state.barbers = JSON.parse(JSON.stringify(state.adminBarbers));
 
-                state.barbers[0] = { ...state.barbers[0], name: b1Name, title: b1Title };
-                state.barbers[1] = { ...state.barbers[1], name: b2Name, title: b2Title };
+                // Seçili berber silinmişse ilk berbere odaklan
+                if (!state.barbers.some(b => b.id === state.selectedBarber)) {
+                    state.selectedBarber = state.barbers[0]?.id || 'barber_1';
+                }
+                if (!state.barbers.some(b => b.id === state.adminSelectedBarberHours)) {
+                    state.adminSelectedBarberHours = state.barbers[0]?.id || 'barber_1';
+                }
 
                 if (db) {
                     setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general'), {
@@ -992,7 +1041,14 @@
                         barbers: state.barbers
                     }, { merge: true });
                 }
+
+                state.barberSaveSuccess = true;
+                validateSelectedTime();
                 render();
+                setTimeout(() => {
+                    state.barberSaveSuccess = false;
+                    render();
+                }, 3000);
             }
             else if (action === 'delete-app') {
                 const id = btn.dataset.id;
@@ -1083,6 +1139,12 @@
             } else if (e.target.dataset.action === 'edit-srv-price') {
                 const idx = parseInt(e.target.dataset.index);
                 if (state.adminServices[idx]) state.adminServices[idx].price = Number(e.target.value) || 0;
+            } else if (e.target.dataset.action === 'edit-barber-name') {
+                const idx = parseInt(e.target.dataset.index);
+                if (state.adminBarbers[idx]) state.adminBarbers[idx].name = e.target.value;
+            } else if (e.target.dataset.action === 'edit-barber-title') {
+                const idx = parseInt(e.target.dataset.index);
+                if (state.adminBarbers[idx]) state.adminBarbers[idx].title = e.target.value;
             }
         });
 
